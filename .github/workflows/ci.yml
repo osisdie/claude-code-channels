@@ -16,8 +16,6 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v19
         with:
           globs: "**/*.md"
-          config: >
-            {"MD013": false, "MD033": false, "MD041": false}
 
       - name: ShellCheck
         uses: ludeeus/action-shellcheck@2.0.0

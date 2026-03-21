@@ -5,7 +5,8 @@
 Using the official **Claude Code Channels** (2026/3/20 research preview) to connect a Claude Code session with a Telegram Bot for bidirectional communication: send commands from Telegram to Claude Code, receive results back on Telegram.
 
 **Architecture:**
-```
+
+```text
 Telegram App (Mobile/Desktop)
     | (Bot API, outbound polling by plugin)
 Telegram Plugin (Bun subprocess, MCP Server)
@@ -39,12 +40,14 @@ bun --version
 ### Phase 2: Install Telegram Plugin
 
 Start a Claude Code session:
+
 ```bash
 claude
 ```
 
 Inside the session:
-```
+
+```text
 /plugin marketplace add anthropics/claude-plugins-official
 /plugin install telegram@claude-plugins-official
 ```
@@ -52,13 +55,15 @@ Inside the session:
 ### Phase 3: Configure Bot Token
 
 Inside Claude Code session:
-```
+
+```text
 /telegram:configure <YOUR_BOT_TOKEN>
 ```
 
 This writes the token to `~/.claude/channels/telegram/.env`.
 
 Alternatively, set the environment variable (takes precedence over .env):
+
 ```bash
 export TELEGRAM_BOT_TOKEN="your-token"
 ```
@@ -66,11 +71,13 @@ export TELEGRAM_BOT_TOKEN="your-token"
 ### Phase 4: Launch with Channels
 
 Using the launcher script:
+
 ```bash
 ./start.sh telegram
 ```
 
 Or manually:
+
 ```bash
 claude --channels plugin:telegram@claude-plugins-official
 ```
@@ -80,11 +87,14 @@ claude --channels plugin:telegram@claude-plugins-official
 1. Send any message to your Bot on Telegram
 2. Bot replies with a **6-digit pairing code**
 3. In Claude Code terminal:
-   ```
+
+   ```text
    /telegram:access pair <CODE>
    ```
+
 4. Lock access (allow paired accounts only):
-   ```
+
+   ```text
    /telegram:access policy allowlist
    ```
 
@@ -102,7 +112,9 @@ claude --channels plugin:telegram@claude-plugins-official
 ## Optional: Project Setup
 
 ### Persistent Session
+
 Use `tmux` or `screen` to keep the session alive:
+
 ```bash
 tmux new -s claude-tg
 ./start.sh telegram
@@ -110,6 +122,7 @@ tmux new -s claude-tg
 ```
 
 ### Permission Configuration
+
 Add `allow` rules in `.claude/settings.local.json` for frequently-used safe operations, preventing unattended sessions from blocking on permission prompts.
 
 ---
@@ -126,7 +139,7 @@ Add `allow` rules in `.claude/settings.local.json` for frequently-used safe oper
 ## Key Files
 
 | File | Purpose |
-|------|---------|
+| ---- | ------- |
 | `.claude/channels/telegram/.env` | Stores `TELEGRAM_BOT_TOKEN` (gitignored) |
 | `.claude/channels/telegram/access.json` | Access control policy & allowlist (gitignored) |
 | `.claude/channels/telegram/inbox/` | Received images/files (gitignored) |

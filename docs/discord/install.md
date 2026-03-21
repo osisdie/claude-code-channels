@@ -5,6 +5,7 @@
 This document records the actual installation and integration experience of connecting Claude Code to Discord via the official Channels plugin (research preview, 2026/03).
 
 **Environment:**
+
 - OS: WSL2 (Linux 6.6.87.2-microsoft-standard-WSL2)
 - Claude Code: v2.1.81
 - Model: Claude Opus 4.6 (1M context)
@@ -32,7 +33,7 @@ This document records the actual installation and integration experience of conn
 
 Inside a Claude Code session:
 
-```
+```text
 /plugin marketplace add anthropics/claude-plugins-official
 /plugin install discord@claude-plugins-official
 ```
@@ -62,12 +63,15 @@ chmod 600 .claude/channels/discord/.env
 1. DM the Bot on Discord
 2. Bot replies with a **6-character pairing code**
 3. In Claude Code terminal:
-   ```
+
+   ```text
    /discord:access pair <CODE>
    ```
+
 4. Bot confirms: "Paired! Say hi to Claude."
 5. Lock access to allowlist only:
-   ```
+
+   ```text
    /discord:access policy allowlist
    ```
 
@@ -77,20 +81,20 @@ chmod 600 .claude/channels/discord/.env
 
 ### Basic Messaging (Bidirectional)
 
-| Direction | How | Status |
-|-----------|-----|--------|
-| Discord -> Claude Code | User DMs Bot, appears as `<channel>` in session | Verified |
+| Direction              | How                                                      | Status   |
+| ---------------------- | -------------------------------------------------------- | -------- |
+| Discord -> Claude Code | User DMs Bot, appears as `<channel>` in session          | Verified |
 | Claude Code -> Discord | `mcp__plugin_discord_discord__reply` tool with `chat_id` | Verified |
 
 ### MCP Tools Available
 
-| Tool | Description | Tested |
-|------|-------------|--------|
-| `reply` | Send message to Discord (supports text, file attachments up to 25MB, max 10 files) | Yes |
-| `react` | Add emoji reaction (unicode or custom `<:name:id>`) | - |
-| `edit_message` | Edit a previously sent Bot message | - |
-| `fetch_messages` | Pull up to 100 recent messages (oldest-first) | - |
-| `download_attachment` | Download file attached to incoming message | - |
+| Tool                  | Description                                                                         | Tested |
+| --------------------- | ----------------------------------------------------------------------------------- | ------ |
+| `reply`               | Send message to Discord (supports text, file attachments up to 25MB, max 10 files) | Yes    |
+| `react`               | Add emoji reaction (unicode or custom `<:name:id>`)                                 | -      |
+| `edit_message`        | Edit a previously sent Bot message                                                  | -      |
+| `fetch_messages`      | Pull up to 100 recent messages (oldest-first)                                       | -      |
+| `download_attachment` | Download file attached to incoming message                                          | -      |
 
 **Note:** Discord plugin has `fetch_messages` which Telegram does not — allows reading recent channel history.
 
@@ -126,7 +130,7 @@ Add Discord reply to the permission whitelist so the Bot can always respond:
 
 ## Architecture
 
-```
+```text
 Discord App (Desktop/Mobile/Web)
     | (WebSocket Gateway, plugin connects outbound)
 Discord Plugin (Bun subprocess, MCP Server)
@@ -142,29 +146,29 @@ Claude Code Session (local, full filesystem access)
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `start.sh` | Launch script with `--channels` flag |
-| `.env.example` | Template for environment variables |
-| `.gitignore` | Excludes secrets, channel state, local settings |
-| `.claude/settings.local.json` | Permission whitelist (gitignored) |
-| `.claude/channels/discord/.env` | Bot token (gitignored) |
-| `.claude/channels/discord/access.json` | Access control & allowlist (gitignored) |
-| `docs/discord/plan.md` | Planning document |
-| `docs/discord/install.md` | This document |
-| `docs/discord/issue.md` | Known issues |
+| File                                       | Purpose                              |
+| ------------------------------------------ | ------------------------------------ |
+| `start.sh`                                 | Launch script with `--channels` flag |
+| `.env.example`                             | Template for environment variables   |
+| `.gitignore`                               | Excludes secrets, channel state, local settings |
+| `.claude/settings.local.json`              | Permission whitelist (gitignored)    |
+| `.claude/channels/discord/.env`            | Bot token (gitignored)               |
+| `.claude/channels/discord/access.json`     | Access control & allowlist (gitignored) |
+| `docs/discord/plan.md`                     | Planning document                    |
+| `docs/discord/install.md`                  | This document                        |
+| `docs/discord/issue.md`                    | Known issues                         |
 
 ---
 
 ## Key Differences from Telegram
 
-| Aspect | Telegram | Discord |
-|--------|----------|---------|
-| Connection | HTTP long-polling | WebSocket Gateway |
-| Message history | Not available | `fetch_messages` (up to 100) |
-| ID format | Numeric chat_id | Snowflake IDs (numeric) |
-| Group access | Via allowlist | Opt-in per channel ID |
-| File limit | 50MB per file | 25MB per file, max 10 files |
+| Aspect          | Telegram          | Discord                      |
+| --------------- | ----------------- | ---------------------------- |
+| Connection      | HTTP long-polling | WebSocket Gateway            |
+| Message history | Not available     | `fetch_messages` (up to 100) |
+| ID format       | Numeric chat_id   | Snowflake IDs (numeric)      |
+| Group access    | Via allowlist     | Opt-in per channel ID        |
+| File limit      | 50MB per file     | 25MB per file, max 10 files  |
 
 ---
 

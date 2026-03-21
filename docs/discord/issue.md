@@ -28,12 +28,14 @@ const STATE_DIR = process.env.DISCORD_STATE_DIR ?? join(homedir(), '.claude', 'c
 ```
 
 So the server writes `access.json` (including pending pairing entries) to the **project directory**:
-```
+
+```text
 <project>/.claude/channels/discord/access.json
 ```
 
 However, the `/discord:access` skill hardcodes the path to the **home directory**:
-```
+
+```text
 ~/.claude/channels/discord/access.json
 ```
 
@@ -60,6 +62,7 @@ Or have Claude Code do it by pointing it to the correct path.
 ### Proper Fix
 
 The `/discord:access` skill should resolve the state directory using the same logic as the server:
+
 1. Check `DISCORD_STATE_DIR` environment variable first
 2. Fall back to `~/.claude/channels/discord/` only if the env var is unset
 
@@ -73,15 +76,15 @@ This is an upstream issue in the official plugin's skill definition.
 **Date:** 2026-03-21
 **Affects:** All channel plugins (Discord, Telegram, etc.)
 
-### Symptom
+### Symptom (Issue #2)
 
 Running `/discord:configure <BOT_TOKEN>` or `/telegram:configure <BOT_TOKEN>` records the token in plaintext in the conversation history.
 
-### Root Cause
+### Root Cause (Issue #2)
 
 The skill accepts the bot token as an inline argument. Claude Code's conversation history persists this, making the credential visible in logs.
 
-### Workaround
+### Workaround (Issue #2)
 
 Write the token directly to the `.env` file instead of using the configure skill:
 
@@ -91,6 +94,6 @@ echo "DISCORD_BOT_TOKEN=<YOUR_TOKEN>" > .claude/channels/discord/.env
 chmod 600 .claude/channels/discord/.env
 ```
 
-### Proper Fix
+### Proper Fix (Issue #2)
 
 The configure skill should use an interactive prompt (e.g., `AskUserQuestion`) to collect the token, rather than accepting it as a command argument.

@@ -10,12 +10,12 @@ A project-level setup for running [Claude Code](https://docs.anthropic.com/en/do
 
 ## Supported Channels
 
-| Channel  | Status  | Docs |
-|----------|---------|------|
+| Channel  | Status  | Docs                             |
+| -------- | ------- | -------------------------------- |
 | Telegram | Ready   | [docs/telegram/](docs/telegram/) |
-| Discord  | Ready   | [docs/discord/](docs/discord/) |
-| Slack    | Planned | - |
-| LINE     | Planned | - |
+| Discord  | Ready   | [docs/discord/](docs/discord/)   |
+| Slack    | Planned | -                                |
+| LINE     | Planned | -                                |
 
 ## Quick Start
 
@@ -28,6 +28,7 @@ A project-level setup for running [Claude Code](https://docs.anthropic.com/en/do
 ### Setup
 
 1. **Clone and configure:**
+
    ```bash
    git clone https://github.com/osisdie/claude-code-channels.git
    cd claude-code-channels
@@ -36,7 +37,8 @@ A project-level setup for running [Claude Code](https://docs.anthropic.com/en/do
    ```
 
 2. **Install a channel plugin** (inside a Claude Code session):
-   ```
+
+   ```text
    /plugin marketplace add anthropics/claude-plugins-official
    /plugin install telegram@claude-plugins-official
    /telegram:configure <YOUR_BOT_TOKEN>
@@ -45,13 +47,14 @@ A project-level setup for running [Claude Code](https://docs.anthropic.com/en/do
 3. **Pair your account** (varies per channel — see channel docs).
 
 4. **Launch:**
+
    ```bash
    ./start.sh telegram
    ```
 
 ## Architecture
 
-```
+```text
 Messaging App (Mobile/Desktop)
     | (Platform API, outbound polling by plugin)
 Channel Plugin (Bun subprocess, MCP Server)
@@ -63,7 +66,7 @@ No inbound ports, webhooks, or external servers needed. WSL2 compatible.
 
 ## Project Structure
 
-```
+```text
 .
 ├── start.sh                  # Multi-channel launcher
 ├── .env.example              # Environment variable template
