@@ -8,12 +8,12 @@
 
 ## 支援的 Channel
 
-| Channel  | 狀態   | 文件 |
-|----------|--------|------|
+| Channel  | 狀態   | 文件                             |
+| -------- | ------ | -------------------------------- |
 | Telegram | 可用   | [docs/telegram/](docs/telegram/) |
-| Discord  | 規劃中 | [docs/discord/](docs/discord/) |
-| Slack    | 規劃中 | - |
-| LINE     | 規劃中 | - |
+| Discord  | 規劃中 | [docs/discord/](docs/discord/)   |
+| Slack    | 規劃中 | -                                |
+| LINE     | 規劃中 | -                                |
 
 ## 快速開始
 
@@ -26,6 +26,7 @@
 ### 設定步驟
 
 1. **Clone 並設定：**
+
    ```bash
    git clone https://github.com/osisdie/claude-code-channels.git
    cd claude-code-channels
@@ -34,7 +35,8 @@
    ```
 
 2. **安裝 channel 插件**（在 Claude Code session 內）：
-   ```
+
+   ```text
    /plugin marketplace add anthropics/claude-plugins-official
    /plugin install telegram@claude-plugins-official
    /telegram:configure <YOUR_BOT_TOKEN>
@@ -43,13 +45,14 @@
 3. **配對你的帳號**（依 channel 不同，請參考各 channel 文件）。
 
 4. **啟動：**
+
    ```bash
    ./start.sh telegram
    ```
 
 ## 架構
 
-```
+```text
 通訊 App（手機/桌面）
     | (平台 API, plugin 主動 outbound polling)
 Channel Plugin (Bun subprocess, MCP Server)
@@ -61,7 +64,7 @@ Claude Code Session (本地，有完整檔案系統存取)
 
 ## 專案結構
 
-```
+```text
 .
 ├── start.sh                  # 多 channel 啟動腳本
 ├── .env.example              # 環境變數範本

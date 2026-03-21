@@ -5,7 +5,8 @@
 Using the official **Claude Code Channels** Discord plugin to connect Claude Code session with a Discord Bot, enabling bidirectional communication. Same architecture as Telegram: outbound polling, no inbound ports.
 
 **Architecture:**
-```
+
+```text
 Discord App (Desktop/Mobile/Web)
     | (WebSocket Gateway, plugin connects outbound)
 Discord Plugin (Bun subprocess, MCP Server)
@@ -49,7 +50,8 @@ Claude Code Session (local, full filesystem access)
 ### Phase 2: Install Discord Plugin
 
 Inside Claude Code session:
-```
+
+```text
 /plugin install discord@claude-plugins-official
 /discord:configure <DISCORD_BOT_TOKEN>
 ```
@@ -59,6 +61,7 @@ Token stored at project-level: `.claude/channels/discord/.env`
 ### Phase 3: Launch with Discord Channel
 
 Update `start.sh` to support discord:
+
 ```bash
 ./start.sh discord
 # or both channels:
@@ -70,11 +73,14 @@ Update `start.sh` to support discord:
 1. DM the Bot on Discord
 2. Bot replies with a **pairing code**
 3. In Claude Code terminal:
-   ```
+
+   ```text
    /discord:access pair <CODE>
    ```
+
 4. Lock access:
-   ```
+
+   ```text
    /discord:access policy allowlist
    ```
 
@@ -89,13 +95,13 @@ Update `start.sh` to support discord:
 
 ## MCP Tools Available
 
-| Tool | Description |
-|------|-------------|
-| `reply` | Send message to channel (`chat_id` + `text`, optional `reply_to`, `files` max 10/25MB each) |
-| `react` | Add emoji reaction (unicode or custom `<:name:id>`) |
-| `edit_message` | Edit previously sent Bot message |
-| `fetch_messages` | Pull up to 100 recent messages (oldest-first, includes message IDs) |
-| `download_attachment` | Download attachments from a message to `inbox/` |
+| Tool                  | Description                                                                          |
+| --------------------- | ------------------------------------------------------------------------------------ |
+| `reply`               | Send message to channel (`chat_id` + `text`, optional `reply_to`, `files` max 10/25MB each) |
+| `react`               | Add emoji reaction (unicode or custom `<:name:id>`)                                  |
+| `edit_message`        | Edit previously sent Bot message                                                     |
+| `fetch_messages`      | Pull up to 100 recent messages (oldest-first, includes message IDs)                  |
+| `download_attachment` | Download attachments from a message to `inbox/`                                      |
 
 **Note:** Discord plugin has `fetch_messages` which Telegram does not — allows reading recent channel history.
 
@@ -103,20 +109,21 @@ Update `start.sh` to support discord:
 
 ## Key Differences from Telegram
 
-| Aspect | Telegram | Discord |
-|--------|----------|---------|
-| Connection | HTTP long-polling | WebSocket Gateway |
-| Message history | Not available | `fetch_messages` (up to 100) |
-| Attachments | Auto-download? | Explicit `download_attachment` call |
-| ID format | Numeric chat_id | Snowflake IDs (numeric) |
-| Group access | Via allowlist | Opt-in per channel ID |
-| File limit | 50MB per file | 25MB per file, max 10 files |
+| Aspect          | Telegram          | Discord                             |
+| --------------- | ----------------- | ----------------------------------- |
+| Connection      | HTTP long-polling | WebSocket Gateway                   |
+| Message history | Not available     | `fetch_messages` (up to 100)        |
+| Attachments     | Auto-download?    | Explicit `download_attachment` call |
+| ID format       | Numeric chat_id   | Snowflake IDs (numeric)             |
+| Group access    | Via allowlist     | Opt-in per channel ID               |
+| File limit      | 50MB per file     | 25MB per file, max 10 files         |
 
 ---
 
 ## Permission Configuration
 
 Add to `.claude/settings.local.json`:
+
 ```json
 {
   "permissions": {
@@ -131,10 +138,10 @@ Add to `.claude/settings.local.json`:
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `.claude/channels/discord/.env` | `DISCORD_BOT_TOKEN` (gitignored) |
-| `.claude/channels/discord/access.json` | Access control & allowlist (gitignored) |
-| `.claude/channels/discord/inbox/` | Downloaded attachments (gitignored) |
-| `docs/discord/plan.md` | This planning document |
-| `docs/discord/install.md` | Post-installation notes (to be created) |
+| File                                    | Purpose                                 |
+| --------------------------------------- | --------------------------------------- |
+| `.claude/channels/discord/.env`         | `DISCORD_BOT_TOKEN` (gitignored)        |
+| `.claude/channels/discord/access.json`  | Access control & allowlist (gitignored) |
+| `.claude/channels/discord/inbox/`       | Downloaded attachments (gitignored)     |
+| `docs/discord/plan.md`                  | This planning document                  |
+| `docs/discord/install.md`               | Post-installation notes (to be created) |

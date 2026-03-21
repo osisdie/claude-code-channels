@@ -5,6 +5,7 @@
 This document records the actual installation and integration experience of connecting Claude Code to Telegram via the official Channels plugin (research preview, 2026/03).
 
 **Environment:**
+
 - OS: WSL2 (Linux 6.6.87.2-microsoft-standard-WSL2)
 - Claude Code: v2.1.81
 - Model: Claude Opus 4.6 (1M context)
@@ -26,14 +27,14 @@ bun --version
 
 Inside a Claude Code session:
 
-```
+```text
 /plugin marketplace add anthropics/claude-plugins-official
 /plugin install telegram@claude-plugins-official
 ```
 
 ### 3. Configure Bot Token
 
-```
+```text
 /telegram:configure <BOT_TOKEN>
 ```
 
@@ -56,11 +57,14 @@ Or use the project's `start.sh`:
 1. Send any message to the Bot on Telegram
 2. Bot replies with a **6-digit pairing code**
 3. In Claude Code terminal:
-   ```
+
+   ```text
    /telegram:access pair <CODE>
    ```
+
 4. Lock access to allowlist only:
-   ```
+
+   ```text
    /telegram:access policy allowlist
    ```
 
@@ -70,25 +74,25 @@ Or use the project's `start.sh`:
 
 ### Basic Messaging (Bidirectional)
 
-| Direction | How | Status |
-|-----------|-----|--------|
+| Direction               | How                                                          | Status   |
+| ----------------------- | ------------------------------------------------------------ | -------- |
 | Telegram -> Claude Code | User sends message to Bot, appears as `<channel>` in session | Verified |
-| Claude Code -> Telegram | `mcp__plugin_telegram_telegram__reply` tool with `chat_id` | Verified |
+| Claude Code -> Telegram | `mcp__plugin_telegram_telegram__reply` tool with `chat_id`   | Verified |
 
 ### MCP Tools Available
 
-| Tool | Description | Tested |
-|------|-------------|--------|
-| `reply` | Send message to Telegram (supports text, MarkdownV2, file attachments up to 50MB) | Yes |
-| `react` | Add emoji reaction to a message | - |
-| `edit_message` | Edit a previously sent Bot message | - |
-| `download_attachment` | Download file attached to incoming message | - |
+| Tool                  | Description                                                                        | Tested |
+| --------------------- | ---------------------------------------------------------------------------------- | ------ |
+| `reply`               | Send message to Telegram (supports text, MarkdownV2, file attachments up to 50MB) | Yes    |
+| `react`               | Add emoji reaction to a message                                                    | -      |
+| `edit_message`        | Edit a previously sent Bot message                                                 | -      |
+| `download_attachment` | Download file attached to incoming message                                         | -      |
 
 ### Reply Threading
 
 Use `reply_to` parameter with a `message_id` to thread replies to specific messages:
 
-```
+```text
 reply(chat_id="...", text="...", reply_to="13")
 ```
 
@@ -105,7 +109,8 @@ A key pattern tested: using Telegram as a human-in-the-loop approval channel.
 5. Claude Code proceeds based on the response and reports result back
 
 **Example approval request:**
-```
+
+```text
 Action: Execute command echo "Hello from approval test"
 Environment: Local session
 Risk: Low
@@ -116,6 +121,7 @@ reject - to cancel
 ```
 
 **Characteristics:**
+
 - "Soft wait" - session waits for the next conversation turn (Telegram or local terminal input)
 - No built-in timeout mechanism; session stays idle until input arrives
 - Works well for CI/CD approval gates, deployment confirmations, etc.
@@ -152,7 +158,7 @@ Commands **not** whitelisted will trigger an approval prompt in the terminal (or
 
 ## Architecture
 
-```
+```text
 Telegram App (Mobile/Desktop)
     | (Bot API, outbound polling by plugin)
     v
@@ -170,15 +176,15 @@ Claude Code Session (local, full filesystem access)
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `start.sh` | Launch script with `--channels` flag |
-| `.env.example` | Template for environment variables |
-| `.gitignore` | Excludes secrets, channel state, local settings |
-| `.claude/settings.local.json` | Permission whitelist (gitignored) |
-| `.claude/channels/telegram/.env` | Bot token (gitignored) |
-| `.claude/channels/telegram/access.json` | Access control & allowlist (gitignored) |
-| `docs/claude_code_channel_telegram_plan.md` | Original planning document |
+| File                                        | Purpose                                        |
+| ------------------------------------------- | ---------------------------------------------- |
+| `start.sh`                                  | Launch script with `--channels` flag           |
+| `.env.example`                              | Template for environment variables             |
+| `.gitignore`                                | Excludes secrets, channel state, local settings |
+| `.claude/settings.local.json`               | Permission whitelist (gitignored)              |
+| `.claude/channels/telegram/.env`            | Bot token (gitignored)                         |
+| `.claude/channels/telegram/access.json`     | Access control & allowlist (gitignored)        |
+| `docs/claude_code_channel_telegram_plan.md` | Original planning document                     |
 
 ---
 

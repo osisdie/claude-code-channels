@@ -5,7 +5,8 @@
 使用 Anthropic 官方的 **Claude Code Channels**（2026/3/20 研究預覽版）將 Claude Code session 與 Telegram Bot 串接，實現雙向溝通：從 Telegram 發送指令給 Claude Code，Claude Code 回覆結果到 Telegram。
 
 **架構概覽：**
-```
+
+```text
 Telegram App (手機/桌面)
     ↕ (Bot API, 由 plugin 主動 polling)
 Telegram Plugin (Bun subprocess, MCP Server)
@@ -39,13 +40,15 @@ bun --version
 ### Phase 2: 安裝 Telegram Plugin
 
 啟動 Claude Code session：
+
 ```bash
 cd /mnt/c/writable/git/nwpie/ClawProjects/claude-claw/
 claude
 ```
 
 在 session 內執行：
-```
+
+```text
 /plugin marketplace add anthropics/claude-plugins-official
 /plugin install telegram@claude-plugins-official
 ```
@@ -53,13 +56,15 @@ claude
 ### Phase 3: 設定 Bot Token
 
 在 Claude Code session 內：
-```
+
+```text
 /telegram:configure <YOUR_BOT_TOKEN>
 ```
 
 這會將 token 寫入 `~/.claude/channels/telegram/.env`。
 
 或者在 shell 設定環境變數（優先於 .env）：
+
 ```bash
 export TELEGRAM_BOT_TOKEN="你的token"
 ```
@@ -67,11 +72,13 @@ export TELEGRAM_BOT_TOKEN="你的token"
 ### Phase 4: 啟動 Channels
 
 使用啟動腳本：
+
 ```bash
 ./start.sh telegram
 ```
 
 或手動啟動：
+
 ```bash
 claude --channels plugin:telegram@claude-plugins-official
 ```
@@ -81,11 +88,14 @@ claude --channels plugin:telegram@claude-plugins-official
 1. 在 Telegram 發任意訊息給你的 Bot
 2. Bot 回覆 **6 位配對碼**
 3. 在 Claude Code terminal 輸入：
-   ```
+
+   ```text
    /telegram:access pair <CODE>
    ```
+
 4. 鎖定存取（僅允許已配對帳號）：
-   ```
+
+   ```text
    /telegram:access policy allowlist
    ```
 
@@ -103,7 +113,9 @@ claude --channels plugin:telegram@claude-plugins-official
 ## 可選：專案設定
 
 ### 常駐運行
+
 用 `tmux` 或 `screen` 保持 session 存活：
+
 ```bash
 tmux new -s claude-tg
 ./start.sh telegram
@@ -111,6 +123,7 @@ tmux new -s claude-tg
 ```
 
 ### 權限設定
+
 在 `.claude/settings.local.json` 中為常用操作添加 `allow` 規則，避免無人值守時卡在權限確認。
 
 ---
@@ -126,10 +139,10 @@ tmux new -s claude-tg
 
 ## 關鍵檔案
 
-| 檔案 | 用途 |
-|------|------|
-| `.claude/channels/telegram/.env` | 儲存 `TELEGRAM_BOT_TOKEN`（gitignored） |
-| `.claude/channels/telegram/access.json` | 存取控制策略和白名單（gitignored） |
-| `.claude/channels/telegram/inbox/` | 接收的圖片/檔案（gitignored） |
-| `.claude/settings.local.json` | Claude Code 權限設定（gitignored） |
-| `start.sh` | 多 channel 啟動腳本 |
+| 檔案                                    | 用途                              |
+| --------------------------------------- | --------------------------------- |
+| `.claude/channels/telegram/.env`        | 儲存 `TELEGRAM_BOT_TOKEN`（gitignored） |
+| `.claude/channels/telegram/access.json` | 存取控制策略和白名單（gitignored）    |
+| `.claude/channels/telegram/inbox/`      | 接收的圖片/檔案（gitignored）         |
+| `.claude/settings.local.json`           | Claude Code 權限設定（gitignored）    |
+| `start.sh`                              | 多 channel 啟動腳本                   |
