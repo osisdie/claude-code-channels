@@ -13,7 +13,7 @@ cd "$PROJECT_DIR"
 # Channel -> plugin mapping
 declare -A CHANNEL_PLUGINS=(
   [telegram]="plugin:telegram@claude-plugins-official"
-  # [discord]="plugin:discord@claude-plugins-official"
+  [discord]="plugin:discord@claude-plugins-official"
   # [slack]="plugin:slack@claude-plugins-official"
   # [line]="plugin:line@claude-plugins-official"
 )

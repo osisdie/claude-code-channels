@@ -1,34 +1,34 @@
-# Claude Code Channels × Telegram 串接計畫
+# Claude Code Channels x Telegram Integration Plan
 
 ## Context
 
-使用 Anthropic 官方的 **Claude Code Channels**（2026/3/20 研究預覽版）將 Claude Code session 與 Telegram Bot 串接，實現雙向溝通：從 Telegram 發送指令給 Claude Code，Claude Code 回覆結果到 Telegram。
+Using the official **Claude Code Channels** (2026/3/20 research preview) to connect a Claude Code session with a Telegram Bot for bidirectional communication: send commands from Telegram to Claude Code, receive results back on Telegram.
 
-**架構概覽：**
+**Architecture:**
 ```
-Telegram App (手機/桌面)
-    ↕ (Bot API, 由 plugin 主動 polling)
+Telegram App (Mobile/Desktop)
+    | (Bot API, outbound polling by plugin)
 Telegram Plugin (Bun subprocess, MCP Server)
-    ↕ (stdio transport)
-Claude Code Session (本地，有完整檔案系統存取)
+    | (stdio transport)
+Claude Code Session (local, full filesystem access)
 ```
 
-不需要開 port、不需要 webhook、不需要外部伺服器。Plugin 主動向 Telegram API polling，所以 WSL2 環境下也不用設定防火牆。
+No inbound ports, webhooks, or external servers needed. Plugin polls Telegram API outbound, so no firewall config required under WSL2.
 
 ---
 
-## 前置條件
+## Prerequisites
 
-- [x] Telegram Bot Token（已有）
-- [ ] 安裝 Bun runtime
-- [ ] Claude Code v2.1.80+（目前 v2.1.81，已符合）
-- [ ] claude.ai 登入認證（非 API key，Channels 需要）
+- [x] Telegram Bot Token
+- [x] Bun runtime installed
+- [x] Claude Code v2.1.80+ (v2.1.81)
+- [x] claude.ai login (not API key — required by Channels)
 
 ---
 
-## 實作步驟
+## Implementation Steps
 
-### Phase 1: 安裝 Bun
+### Phase 1: Install Bun
 
 ```bash
 curl -fsSL https://bun.sh/install | bash
@@ -36,103 +36,99 @@ source ~/.bashrc
 bun --version
 ```
 
-### Phase 2: 安裝 Telegram Plugin
+### Phase 2: Install Telegram Plugin
 
-啟動 Claude Code session：
+Start a Claude Code session:
 ```bash
-cd /mnt/c/writable/git/nwpie/ClawProjects/claude-claw/
 claude
 ```
 
-在 session 內執行：
+Inside the session:
 ```
 /plugin marketplace add anthropics/claude-plugins-official
 /plugin install telegram@claude-plugins-official
 ```
 
-### Phase 3: 設定 Bot Token
+### Phase 3: Configure Bot Token
 
-在 Claude Code session 內：
+Inside Claude Code session:
 ```
 /telegram:configure <YOUR_BOT_TOKEN>
 ```
 
-這會將 token 寫入 `~/.claude/channels/telegram/.env`。
+This writes the token to `~/.claude/channels/telegram/.env`.
 
-或者在 shell 設定環境變數（優先於 .env）：
+Alternatively, set the environment variable (takes precedence over .env):
 ```bash
-export TELEGRAM_BOT_TOKEN="你的token"
+export TELEGRAM_BOT_TOKEN="your-token"
 ```
 
-### Phase 4: 啟動 Channels
+### Phase 4: Launch with Channels
 
-退出 session 後，重新啟動並帶上 `--channels` flag：
+Using the launcher script:
+```bash
+./start.sh telegram
+```
+
+Or manually:
 ```bash
 claude --channels plugin:telegram@claude-plugins-official
 ```
 
-### Phase 5: 配對 Telegram 帳號
+### Phase 5: Pair Telegram Account
 
-1. 在 Telegram 發任意訊息給你的 Bot
-2. Bot 回覆 **6 位配對碼**
-3. 在 Claude Code terminal 輸入：
+1. Send any message to your Bot on Telegram
+2. Bot replies with a **6-digit pairing code**
+3. In Claude Code terminal:
    ```
    /telegram:access pair <CODE>
    ```
-4. 鎖定存取（僅允許已配對帳號）：
+4. Lock access (allow paired accounts only):
    ```
    /telegram:access policy allowlist
    ```
 
-### Phase 6: 驗證測試
+### Phase 6: Verification
 
-1. **基本測試**：在 Telegram 發 `What files are in my working directory?`，確認 Claude Code 收到並回覆
-2. **檔案測試**：發送圖片給 Bot（下載到 `~/.claude/channels/telegram/inbox/`）
-3. **工具確認**：Plugin 提供三個 MCP 工具：
-   - `reply` — 回覆訊息（自動分段長文，支援最大 50MB 附件）
-   - `react` — 添加 emoji 回應
-   - `edit_message` — 編輯 Bot 先前的訊息
+1. **Basic test**: Send `What files are in my working directory?` on Telegram, confirm Claude Code receives and replies
+2. **File test**: Send an image to the Bot (downloaded to `~/.claude/channels/telegram/inbox/`)
+3. **Tool check**: Plugin provides three MCP tools:
+   - `reply` — Send messages (auto-chunks long text, supports up to 50MB attachments)
+   - `react` — Add emoji reactions
+   - `edit_message` — Edit previously sent Bot messages
 
 ---
 
-## 可選：專案設定
+## Optional: Project Setup
 
-### 建立啟動腳本 `start.sh`
-```bash
-#!/usr/bin/env bash
-cd /mnt/c/writable/git/nwpie/ClawProjects/claude-claw/
-claude --channels plugin:telegram@claude-plugins-official
-```
-
-### 常駐運行
-用 `tmux` 或 `screen` 保持 session 存活：
+### Persistent Session
+Use `tmux` or `screen` to keep the session alive:
 ```bash
 tmux new -s claude-tg
-./start.sh
-# Ctrl+B D 離開 tmux
+./start.sh telegram
+# Ctrl+B D to detach
 ```
 
-### 權限設定
-在 `.claude/settings.local.json` 中為常用操作添加 `allow` 規則，避免無人值守時卡在權限確認：
-- 路徑：`/mnt/c/writable/git/nwpie/ClawProjects/claude-claw/.claude/settings.local.json`
+### Permission Configuration
+Add `allow` rules in `.claude/settings.local.json` for frequently-used safe operations, preventing unattended sessions from blocking on permission prompts.
 
 ---
 
-## 重要注意事項
+## Important Notes
 
-1. **離線訊息遺失**：Bot 只接收 session 運行期間的新訊息，離線期間的訊息會遺失
-2. **權限阻塞**：如果 Claude 遇到權限確認而你不在 terminal 前，session 會暫停
-3. **多 Bot 實例**：不同專案可用不同 Bot，設定 `TELEGRAM_STATE_DIR` 指向不同路徑
-4. **WSL2 相容**：Plugin 用 outbound polling，不需要開 inbound port
+1. **Offline messages lost**: Bot only receives messages while the session is running
+2. **Permission blocking**: If Claude hits a permission prompt and you're away from the terminal, the session pauses
+3. **Multiple Bot instances**: Use different Bots per project by setting `TELEGRAM_STATE_DIR` to different paths
+4. **WSL2 compatible**: Plugin uses outbound polling, no inbound port needed
 
 ---
 
-## 關鍵檔案
+## Key Files
 
-| 檔案 | 用途 |
-|------|------|
-| `~/.claude/channels/telegram/.env` | 儲存 `TELEGRAM_BOT_TOKEN` |
-| `~/.claude/channels/telegram/access.json` | 存取控制策略和白名單 |
-| `~/.claude/channels/telegram/inbox/` | 接收的圖片/檔案 |
-| `.claude/settings.local.json` | Claude Code 權限設定 |
-| `start.sh`（新建） | 啟動腳本 |
+| File | Purpose |
+|------|---------|
+| `.claude/channels/telegram/.env` | Stores `TELEGRAM_BOT_TOKEN` (gitignored) |
+| `.claude/channels/telegram/access.json` | Access control policy & allowlist (gitignored) |
+| `.claude/channels/telegram/inbox/` | Received images/files (gitignored) |
+| `.claude/settings.local.json` | Claude Code permission config (gitignored) |
+| `start.sh` | Multi-channel launcher script |

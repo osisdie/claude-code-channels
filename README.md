@@ -1,5 +1,7 @@
 # claude-code-channels
 
+[繁體中文](README_zh-tw.md)
+
 Connect Claude Code to messaging platforms for bidirectional, remote interaction with your local AI agent.
 
 ## What This Is
@@ -11,7 +13,7 @@ A project-level setup for running [Claude Code](https://docs.anthropic.com/en/do
 | Channel  | Status  | Docs |
 |----------|---------|------|
 | Telegram | Ready   | [docs/telegram/](docs/telegram/) |
-| Discord  | Planned | - |
+| Discord  | Ready   | [docs/discord/](docs/discord/) |
 | Slack    | Planned | - |
 | LINE     | Planned | - |
 
@@ -69,10 +71,16 @@ No inbound ports, webhooks, or external servers needed. WSL2 compatible.
 ├── CHANGELOG.md
 ├── LICENSE
 ├── docs/
-│   └── telegram/
+│   ├── telegram/
+│   │   ├── plan.md           # Integration planning doc
+│   │   ├── plan_zh-tw.md     # Planning doc (Traditional Chinese)
+│   │   ├── install.md        # Installation & integration notes
+│   │   └── security.png
+│   └── discord/
 │       ├── plan.md           # Integration planning doc
+│       ├── plan_zh-tw.md     # Planning doc (Traditional Chinese)
 │       ├── install.md        # Installation & integration notes
-│       └── security.png
+│       └── issue.md          # Known issues
 └── .claude/                  # (gitignored)
     ├── settings.local.json   # Permission whitelist
     └── channels/<channel>/   # Per-channel state (tokens, access)
@@ -102,6 +110,9 @@ Per-channel documentation lives under `docs/<channel>/`:
 
 - [Telegram — Installation & Integration Notes](docs/telegram/install.md)
 - [Telegram — Planning Document](docs/telegram/plan.md)
+- [Discord — Installation & Integration Notes](docs/discord/install.md)
+- [Discord — Planning Document](docs/discord/plan.md)
+- [Discord — Known Issues](docs/discord/issue.md)
 
 ## License
 
