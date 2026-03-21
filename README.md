@@ -1,5 +1,10 @@
 # claude-code-channels
 
+[![CI](https://github.com/osisdie/claude-code-channels/actions/workflows/ci.yml/badge.svg)](https://github.com/osisdie/claude-code-channels/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/github/license/osisdie/claude-code-channels)](LICENSE)
+[![GitHub issues](https://img.shields.io/github/issues/osisdie/claude-code-channels)](https://github.com/osisdie/claude-code-channels/issues)
+[![GitHub stars](https://img.shields.io/github/stars/osisdie/claude-code-channels)](https://github.com/osisdie/claude-code-channels/stargazers)
+
 [繁體中文](README_zh-tw.md)
 
 Connect Claude Code to messaging platforms for bidirectional, remote interaction with your local AI agent.
