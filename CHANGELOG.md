@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [0.1.0] - 2026-03-21
 
 ### Added
+
 - Telegram channel integration via Claude Code Channels plugin
 - Bidirectional messaging (Telegram <-> Claude Code session)
 - Approval workflow pattern (approve/reject via Telegram)
