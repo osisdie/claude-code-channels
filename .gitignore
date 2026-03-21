@@ -1,0 +1,16 @@
+# Credentials
+.env
+.env.*
+!.env.example
+
+# Claude Code local settings (per-machine permissions/config)
+.claude/settings.local.json
+
+# Channel state (tokens, access control, inbox — per-channel)
+.claude/channels/
+
+# Playwright MCP screenshots
+.playwright-mcp/
+
+# Node / Bun
+node_modules/
