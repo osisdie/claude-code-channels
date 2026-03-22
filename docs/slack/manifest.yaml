@@ -1,0 +1,30 @@
+display_information:
+  name: Claude Code Bot
+  description: Bidirectional bridge to local Claude Code agent
+features:
+  bot_user:
+    display_name: Claude Code
+    always_online: true
+  app_home:
+    messages_tab_enabled: true
+    messages_tab_read_only_enabled: false
+oauth_config:
+  scopes:
+    bot:
+      - chat:write
+      - channels:history
+      - channels:read
+      - files:read
+      - files:write
+      - im:history
+      - im:read
+      - im:write
+      - reactions:write
+      - users:read
+settings:
+  socket_mode_enabled: true
+  event_subscriptions:
+    bot_events:
+      - message.channels
+      - message.im
+  org_deploy_enabled: false
