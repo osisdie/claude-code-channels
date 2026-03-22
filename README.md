@@ -19,7 +19,7 @@ A project-level setup for running [Claude Code](https://docs.anthropic.com/en/do
 | -------- | ------- | -------------------------------- |
 | Telegram | Ready   | [docs/telegram/](docs/telegram/) |
 | Discord  | Ready   | [docs/discord/](docs/discord/)   |
-| Slack    | MCP Only | [docs/slack/](docs/slack/)      |
+| Slack    | Broker   | [docs/slack/](docs/slack/)      |
 | LINE     | Planned | -                                |
 
 ## Quick Start

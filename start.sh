@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-# Launch Claude Code with specified channel(s)
-#
-# Usage:
-#   ./start.sh                    # default: telegram
-#   ./start.sh telegram           # single channel
-#   ./start.sh telegram discord   # multiple channels
 set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -14,23 +8,32 @@ cd "$PROJECT_DIR"
 declare -A CHANNEL_PLUGINS=(
   [telegram]="plugin:telegram@claude-plugins-official"
   [discord]="plugin:discord@claude-plugins-official"
-  # [line]="plugin:line@claude-plugins-official"
 )
 
-# MCP-only plugins (tool integrations, no --channels flag)
-# These are installed globally via /plugin install and loaded automatically.
-# Slack: outbound only (search, send, canvas) — not a channel plugin.
-# See docs/slack/plan.md and docs/issues.md Issue #3.
+# Broker channels (standalone polling, no --channels needed)
+declare -A BROKER_CHANNELS=(
+  [slack]="external_plugins/slack-channel/broker.ts"
+)
 
 CHANNELS=("${@:-telegram}")
 
+# Check if any channel is a broker type
+for ch in "${CHANNELS[@]}"; do
+  broker="${BROKER_CHANNELS[$ch]:-}"
+  if [[ -n "$broker" ]]; then
+    export "${ch^^}_STATE_DIR=$PROJECT_DIR/.claude/channels/$ch"
+    echo "Starting $ch broker..."
+    exec bun run "$broker"
+  fi
+done
+
+# Otherwise, use Claude Code --channels
 CHANNEL_ARGS=""
 for ch in "${CHANNELS[@]}"; do
   plugin="${CHANNEL_PLUGINS[$ch]:-}"
   if [[ -z "$plugin" ]]; then
-    echo "Error: unknown channel '$ch' (not a channel plugin)"
-    echo "Available channels: ${!CHANNEL_PLUGINS[*]}"
-    echo "Note: Slack is an MCP plugin (outbound only), not a channel. Use /slack:* commands inside a session."
+    echo "Error: unknown channel '$ch'"
+    echo "Available: ${!CHANNEL_PLUGINS[*]} ${!BROKER_CHANNELS[*]}"
     exit 1
   fi
   export "${ch^^}_STATE_DIR=$PROJECT_DIR/.claude/channels/$ch"

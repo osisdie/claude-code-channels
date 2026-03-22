@@ -14,7 +14,7 @@
 | -------- | ------ | -------------------------------- |
 | Telegram | 可用   | [docs/telegram/](docs/telegram/) |
 | Discord  | 可用   | [docs/discord/](docs/discord/)   |
-| Slack    | 僅 MCP | [docs/slack/](docs/slack/)       |
+| Slack    | Broker | [docs/slack/](docs/slack/)       |
 | LINE     | 規劃中 | -                                |
 
 ## 快速開始

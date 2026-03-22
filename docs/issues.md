@@ -137,4 +137,40 @@ Authentication is via OAuth (browser-based), not `.env` tokens.
 
 ### Proper Fix
 
-A true Slack **channel** plugin (bidirectional DM bridge matching the Discord/Telegram pattern) would need to be built. See [docs/slack/plan.md](slack/plan.md) for the proposed architecture.
+A true Slack **channel** plugin (bidirectional DM bridge matching the Discord/Telegram pattern) would need to be built. See [docs/slack/plan.md](slack/plan.md) for the proposed architecture. In the meantime, a **message broker** (`./start.sh slack`) provides bidirectional DM via polling + `claude -p`. See [docs/slack/install.md](slack/install.md).
+
+---
+
+## Issue #4: Claude Code `--channels server:` Dev Mode Never Approved
+
+**Status:** Claude Code bug (unresolved)
+**Date:** 2026-03-22
+**Affects:** Any custom channel plugin using `server:` type
+
+### Symptom
+
+Running `claude --channels server:slack-channel --dangerously-load-development-channels server:slack-channel` shows the development channels warning prompt, but after confirming, the channel notifications are silently dropped with:
+
+```text
+Channel notifications skipped: server slack-channel is not on the approved channels allowlist
+```
+
+### Root Cause
+
+Claude Code's channel approval logic checks a remote feature flag (`tengu_harbor_ledger`) for approved `plugin:` channels, and a `dev` flag for development channels. The `--dangerously-load-development-channels` flag is parsed and shows the UI prompt, but **never sets `dev: true`** on the channel entry. The `setAllowedChannels()` function is defined but never called.
+
+This means `server:` type channels can never receive inbound notifications, even in development mode.
+
+### Workaround
+
+Use the **message broker** approach instead of Claude Code's `--channels` system:
+
+```bash
+./start.sh slack  # runs broker.ts, not --channels
+```
+
+The broker polls Slack DMs directly and invokes `claude -p` per message, bypassing the channel plugin system entirely.
+
+### Proper Fix
+
+Anthropic needs to fix Claude Code to properly wire `--dangerously-load-development-channels` to the channel approval logic. The `dev` flag should bypass the remote allowlist check for `server:` entries.
