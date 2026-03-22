@@ -18,7 +18,7 @@ Claude Code Session (local, full filesystem access)
 
 ## Prerequisites
 
-- [x] Bun runtime (already installed for Telegram)
+- [x] Bun runtime (see [prerequisites](../prerequisites.md))
 - [x] Claude Code v2.1.80+ (v2.1.81)
 - [ ] Discord Bot Token (from Discord Developer Portal)
 - [ ] Discord Bot added to target server with correct permissions

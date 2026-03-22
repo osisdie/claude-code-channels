@@ -5,7 +5,7 @@
 [![GitHub issues](https://img.shields.io/github/issues/osisdie/claude-code-channels)](https://github.com/osisdie/claude-code-channels/issues)
 [![GitHub stars](https://img.shields.io/github/stars/osisdie/claude-code-channels)](https://github.com/osisdie/claude-code-channels/stargazers)
 
-[繁體中文](README_zh-tw.md)
+English | [繁體中文](README.zh-TW.md)
 
 Connect Claude Code to messaging platforms for bidirectional, remote interaction with your local AI agent.
 
@@ -19,7 +19,7 @@ A project-level setup for running [Claude Code](https://docs.anthropic.com/en/do
 | -------- | ------- | -------------------------------- |
 | Telegram | Ready   | [docs/telegram/](docs/telegram/) |
 | Discord  | Ready   | [docs/discord/](docs/discord/)   |
-| Slack    | Planned | -                                |
+| Slack    | Broker   | [docs/slack/](docs/slack/)      |
 | LINE     | Planned | -                                |
 
 ## Quick Start
@@ -69,6 +69,35 @@ Claude Code Session (local, full filesystem access)
 
 No inbound ports, webhooks, or external servers needed. WSL2 compatible.
 
+For a deep dive into the official plugin internals, see [Plugin Architecture](docs/plugins/architecture.md).
+
+## Usage Examples
+
+### Remote Task Execution
+
+```text
+# From Telegram/Discord, send:
+What files changed in the last commit?
+
+# Claude Code executes `git diff HEAD~1` and replies with the diff summary
+```
+
+### Approval Workflow
+
+```text
+# Claude Code encounters a destructive operation:
+Bot: "About to run `rm -rf dist/` — approve or reject?"
+You: approve
+# Claude Code proceeds
+```
+
+### Multi-Channel Launch
+
+```bash
+# Start with multiple channels simultaneously
+./start.sh telegram discord
+```
+
 ## Project Structure
 
 ```text
@@ -77,50 +106,91 @@ No inbound ports, webhooks, or external servers needed. WSL2 compatible.
 ├── .env.example              # Environment variable template
 ├── .gitignore                # Excludes secrets & channel state
 ├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── SECURITY.md
 ├── LICENSE
+├── README.md
+├── README.zh-TW.md
 ├── docs/
+│   ├── prerequisites.md      # Shared setup (Bun, Claude Code)
+│   ├── prerequisites.zh-tw.md # Shared setup (zh-TW)
+│   ├── issues.md             # Known issues (cross-channel)
+│   ├── plugins/
+│   │   ├── architecture.md       # Official plugin architecture (EN)
+│   │   └── architecture.zh-tw.md # Official plugin architecture (zh-TW)
 │   ├── telegram/
 │   │   ├── plan.md           # Integration planning doc
-│   │   ├── plan_zh-tw.md     # Planning doc (Traditional Chinese)
+│   │   ├── plan.zh-tw.md     # Planning doc (zh-TW)
 │   │   ├── install.md        # Installation & integration notes
+│   │   ├── install.zh-tw.md  # Installation notes (zh-TW)
 │   │   └── security.png
-│   └── discord/
-│       ├── plan.md           # Integration planning doc
-│       ├── plan_zh-tw.md     # Planning doc (Traditional Chinese)
+│   ├── discord/
+│   │   ├── plan.md           # Integration planning doc
+│   │   ├── plan.zh-tw.md     # Planning doc (zh-TW)
+│   │   ├── install.md        # Installation & integration notes
+│   │   └── install.zh-tw.md  # Installation notes (zh-TW)
+│   └── slack/
+│       ├── plan.md           # Integration plan (MCP only, not channel)
 │       ├── install.md        # Installation & integration notes
-│       └── issue.md          # Known issues
+│       └── install.zh-tw.md  # Installation notes (zh-TW)
+├── scripts/
+│   └── verify_slack.sh       # Slack token verification & smoke test
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.md
+│   │   └── feature_request.md
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   └── workflows/ci.yml
 └── .claude/                  # (gitignored)
+    ├── agents/
+    │   └── pre-push-reviewer.md
     ├── settings.local.json   # Permission whitelist
     └── channels/<channel>/   # Per-channel state (tokens, access)
 ```
 
-## Usage Patterns
+## Screenshots
 
-### Remote Messaging
+### Telegram
 
-Send a message to the bot on any connected platform. Claude Code receives it and can reply, run commands, edit files, etc.
+| Ask | Reply |
+|-----|-------|
+| ![Telegram Ask](docs/screenshots/telegram/ask.png) | ![Telegram Reply](docs/screenshots/telegram/reply.png) |
 
-### Approval Workflows
+### Discord
 
-Claude Code sends approval requests to the messaging channel and waits for `approve`/`reject` before proceeding. Useful for:
+| Ask | Reply |
+|-----|-------|
+| ![Discord Ask](docs/screenshots/discord/ask.png) | ![Discord Reply](docs/screenshots/discord/reply.png) |
 
-- Deployment confirmations
-- Destructive operations review
-- CI/CD gates
+### Slack
 
-### Permission Management
+| Ask | Reply |
+|-----|-------|
+| ![Slack Ask](docs/screenshots/slack/ask.png) | ![Slack Reply](docs/screenshots/slack/reply.png) |
 
-Configure `.claude/settings.local.json` to whitelist safe tools so the bot can respond without blocking on terminal prompts.
+### Claude Code Terminal
+
+![Claude Code Channel Messages](docs/screenshots/claude_code/channel_messages.png)
 
 ## Docs
 
-Per-channel documentation lives under `docs/<channel>/`:
+### Per-Channel
 
-- [Telegram — Installation & Integration Notes](docs/telegram/install.md)
-- [Telegram — Planning Document](docs/telegram/plan.md)
-- [Discord — Installation & Integration Notes](docs/discord/install.md)
-- [Discord — Planning Document](docs/discord/plan.md)
-- [Discord — Known Issues](docs/discord/issue.md)
+- [Telegram -- Installation & Integration Notes](docs/telegram/install.md)
+- [Telegram -- Planning Document](docs/telegram/plan.md)
+- [Discord -- Installation & Integration Notes](docs/discord/install.md)
+- [Discord -- Planning Document](docs/discord/plan.md)
+- [Slack -- Installation & Integration Notes](docs/slack/install.md)
+- [Slack -- Planning Document](docs/slack/plan.md)
+
+### General
+
+- [Prerequisites (Bun, Claude Code)](docs/prerequisites.md)
+- [Plugin Architecture](docs/plugins/architecture.md) ([繁體中文](docs/plugins/architecture.zh-tw.md))
+- [Known Issues (Cross-Channel)](docs/issues.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security Policy](SECURITY.md)
+- [Changelog](CHANGELOG.md)
 
 ## License
 
