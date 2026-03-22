@@ -16,8 +16,10 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 load_env() {
   local file="$1"
   if [[ -f "$file" ]]; then
-    # shellcheck disable=SC1090
-    set -a; source "$file"; set +a
+    set -a
+    # shellcheck source=/dev/null
+    source "$file"
+    set +a
   fi
 }
 
