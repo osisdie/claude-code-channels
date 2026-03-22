@@ -156,7 +156,7 @@ Claude Code Session (local, full filesystem access)
 | `.claude/channels/discord/access.json`     | Access control & allowlist (gitignored) |
 | `docs/discord/plan.md`                     | Planning document                    |
 | `docs/discord/install.md`                  | This document                        |
-| `docs/discord/issue.md`                    | Known issues                         |
+| `docs/issues.md`                           | Known issues (cross-channel)         |
 
 ---
 
@@ -176,6 +176,6 @@ Claude Code Session (local, full filesystem access)
 
 1. **Offline messages are lost** - Bot only receives messages while the session is running
 2. **Permission blocking** - Non-whitelisted tool calls block the session until approved in terminal; whitelist frequently-used safe tools
-3. **State directory path mismatch** - See [issue.md](issue.md) for details on the `DISCORD_STATE_DIR` vs skill path mismatch
+3. **State directory path mismatch** - See [docs/issues.md](../issues.md) for details on the `DISCORD_STATE_DIR` vs skill path mismatch
 4. **Token security** - Never pass bot tokens as command arguments; write directly to `.env` file
 5. **Bot API rate limits** - Discord has stricter rate limits than Telegram; the plugin handles this internally

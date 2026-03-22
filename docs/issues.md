@@ -1,10 +1,10 @@
-# Discord Channel - Known Issues
+# Known Issues (Cross-Channel)
 
 ## Issue #1: State Directory Path Mismatch (Pairing Fails)
 
-**Status:** Workaround applied
+**Status:** Workaround applied / [PR #866](https://github.com/anthropics/claude-plugins-official/pull/866) pending
 **Date:** 2026-03-21
-**Affects:** Discord (and likely Telegram) channel plugins
+**Affects:** Discord and Telegram channel plugins
 
 ### Symptom
 
@@ -66,7 +66,7 @@ The `/discord:access` skill should resolve the state directory using the same lo
 1. Check `DISCORD_STATE_DIR` environment variable first
 2. Fall back to `~/.claude/channels/discord/` only if the env var is unset
 
-This is an upstream issue in the official plugin's skill definition.
+This is an upstream issue in the official plugin's skill definition. Fix submitted as [PR #866](https://github.com/anthropics/claude-plugins-official/pull/866).
 
 ---
 
@@ -76,15 +76,15 @@ This is an upstream issue in the official plugin's skill definition.
 **Date:** 2026-03-21
 **Affects:** All channel plugins (Discord, Telegram, etc.)
 
-### Symptom (Issue #2)
+### Symptom
 
 Running `/discord:configure <BOT_TOKEN>` or `/telegram:configure <BOT_TOKEN>` records the token in plaintext in the conversation history.
 
-### Root Cause (Issue #2)
+### Root Cause
 
 The skill accepts the bot token as an inline argument. Claude Code's conversation history persists this, making the credential visible in logs.
 
-### Workaround (Issue #2)
+### Workaround
 
 Write the token directly to the `.env` file instead of using the configure skill:
 
@@ -94,6 +94,47 @@ echo "DISCORD_BOT_TOKEN=<YOUR_TOKEN>" > .claude/channels/discord/.env
 chmod 600 .claude/channels/discord/.env
 ```
 
-### Proper Fix (Issue #2)
+### Proper Fix
 
 The configure skill should use an interactive prompt (e.g., `AskUserQuestion`) to collect the token, rather than accepting it as a command argument.
+
+---
+
+## Issue #3: Slack Plugin Is Not a Channel Plugin
+
+**Status:** By design (not a bug)
+**Date:** 2026-03-22
+**Affects:** Slack integration expectations
+
+### Symptom
+
+After installing `slack@claude-plugins-official` and configuring `SLACK_BOT_TOKEN` / `SLACK_APP_TOKEN`, DMing the Slack bot produces no response. The bot appears online but does not process inbound messages.
+
+### Root Cause
+
+The `slack@claude-plugins-official` plugin is an **MCP tool integration**, not a **channel plugin**:
+
+| Aspect | Channel plugins (Discord/Telegram) | Slack plugin |
+| ------ | ----------------------------------- | ------------ |
+| Type | `claude/channel` capability | MCP tools via HTTP |
+| Connection | Bot Token → local `server.ts` | OAuth → `mcp.slack.com` |
+| Inbound messages | Yes (bidirectional DM bridge) | No (outbound actions only) |
+| Pairing / access.json | Yes | No |
+| `--channels` flag | Yes | No |
+
+The Slack plugin is maintained by Slack (source: [slackapi/slack-mcp-cursor-plugin](https://github.com/slackapi/slack-mcp-cursor-plugin)), while Discord/Telegram channel plugins are built by Anthropic's channel team.
+
+### Workaround
+
+Use the Slack plugin for **outbound actions** only:
+
+- `/slack:slack-messaging` — send messages
+- `/slack:slack-search` — search workspace
+- `/slack:summarize-channel` — summarize channels
+- `/slack:draft-announcement` — draft announcements
+
+Authentication is via OAuth (browser-based), not `.env` tokens.
+
+### Proper Fix
+
+A true Slack **channel** plugin (bidirectional DM bridge matching the Discord/Telegram pattern) would need to be built. See [docs/slack/plan.md](slack/plan.md) for the proposed architecture.
