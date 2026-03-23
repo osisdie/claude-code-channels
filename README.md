@@ -142,7 +142,12 @@ You: approve
 │   ├── slack-channel/
 │   │   └── broker.ts         # Slack message broker
 │   └── line-channel/
-│       └── broker.ts         # LINE webhook broker
+│       ├── broker.ts         # LINE webhook broker (direct, needs ngrok)
+│       ├── broker-relay.ts   # LINE relay bridge (polls cloud relay)
+│       └── relay/            # Cloudflare Worker (cloud webhook)
+├── lib/
+│   ├── sessions/             # Session memory (STM + LTM + compacting)
+│   └── safety/               # Content filter, quota, audit logging
 ├── scripts/
 │   └── verify_slack.sh       # Slack token verification & smoke test
 ├── .github/
@@ -184,6 +189,12 @@ You: approve
 |------|------|
 | <img src="docs/screenshots/line/ask_flower.jpg" width="300" alt="LINE Flower"> | <img src="docs/screenshots/line/ask_weather.jpg" width="300" alt="LINE Weather"> |
 
+### LINE Relay (Cloud)
+
+| Ask (EN) | Ask (zh-TW) |
+|------|------|
+| <img src="docs/screenshots/line-relay/ask_number_en.png" width="300" alt="LINE Relay EN"> | <img src="docs/screenshots/line-relay/ask_number_zh-tw.png" width="300" alt="LINE Relay zh-TW"> |
+
 ### Claude Code Terminal
 
 ![Claude Code Channel Messages](docs/screenshots/claude_code/channel_messages.png)
@@ -200,11 +211,14 @@ You: approve
 - [Slack -- Planning Document](docs/slack/plan.md)
 - [LINE -- Installation & Integration Notes](docs/line/install.md)
 - [LINE -- Planning Document](docs/line/plan.md)
+- [LINE -- Relay Deployment Guide](docs/line/relay.md)
 
 ### General
 
 - [Prerequisites (Bun, Claude Code)](docs/prerequisites.md)
 - [Plugin Architecture](docs/plugins/architecture.md) ([繁體中文](docs/plugins/architecture.zh-tw.md))
+- [Session Memory](docs/broker/memory.md)
+- [Safety & Abuse Prevention](docs/broker/safety.md)
 - [Known Issues (Cross-Channel)](docs/issues.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security Policy](SECURITY.md)
