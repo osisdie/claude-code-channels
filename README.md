@@ -182,7 +182,7 @@ You: approve
 
 | Ask (Flower) | Ask (Weather) |
 |------|------|
-| <img src="docs/screenshots/line/ask_flower.jpg" width="300"> | <img src="docs/screenshots/line/ask_weather.jpg" width="300"> |
+| <img src="docs/screenshots/line/ask_flower.jpg" width="300" alt="LINE Flower"> | <img src="docs/screenshots/line/ask_weather.jpg" width="300" alt="LINE Weather"> |
 
 ### Claude Code Terminal
 
