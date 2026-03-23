@@ -19,6 +19,7 @@ POST /reply → Cloudflare Worker → LINE Push API → LINE User
 ```
 
 **Key decisions:**
+
 - **Cloud: Cloudflare Workers + KV** — free tier (100K req/day), no cold start, KV for queue
 - **Always Push API** — replyToken always expires before the relay round-trip completes. Push API is the only viable option (500 free/month)
 - **Replies via cloud relay** — centralized LINE token management, local bridge only needs RELAY_SECRET
@@ -26,7 +27,7 @@ POST /reply → Cloudflare Worker → LINE Push API → LINE User
 
 ## File Structure
 
-```
+```text
 external_plugins/line-channel/
   broker.ts                  # existing direct webhook broker (unchanged)
   broker-relay.ts            # NEW: local bridge that polls cloud relay
@@ -61,7 +62,9 @@ docs/line/
 ### Queue Schema (KV)
 
 Key: `msg:{timestamp}:{uuid}` (lexicographic = chronological order)
+
 Value:
+
 ```json
 {
   "userId": "Uxxxxxxxx",
@@ -73,6 +76,7 @@ Value:
   "timestamp": 1711234567890
 }
 ```
+
 TTL: 1 hour (auto-cleanup)
 
 ## Local Bridge — `broker-relay.ts`
@@ -90,7 +94,7 @@ Polling loop (same pattern as Slack broker):
 
 ### Env vars
 
-```
+```bash
 RELAY_URL=https://line-relay.your-worker.workers.dev
 RELAY_SECRET=<64-char-hex>
 POLL_INTERVAL=5
@@ -113,6 +117,7 @@ Usage: `./start.sh line-relay`
 ## Implementation Phases
 
 ### Phase 1: Cloud Relay (~2-3h)
+
 1. `wrangler init relay` in `external_plugins/line-channel/`
 2. Create KV namespace
 3. Implement all 5 endpoints
@@ -120,12 +125,14 @@ Usage: `./start.sh line-relay`
 5. Update LINE webhook URL to Workers URL (stable, permanent)
 
 ### Phase 2: Local Bridge (~1-2h)
+
 1. Create `broker-relay.ts` — copy structure from Slack broker
 2. Replace Slack polling with relay API polling
 3. Reuse: runClaude, chunk, loadAccess, logging, rate limiting
 4. Add to start.sh
 
 ### Phase 3: Test & Document (~1h)
+
 1. E2E: LINE message → cloud → local → response → LINE
 2. Image flow
 3. Create `docs/line/relay.md`

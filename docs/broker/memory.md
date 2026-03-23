@@ -10,7 +10,7 @@ Brokers spawn a fresh `claude -p` subprocess per incoming message. Without sessi
 
 ## Architecture
 
-```
+```text
 User message
     │
     ▼
@@ -36,7 +36,7 @@ User message
 
 All session data lives under the channel's state directory:
 
-```
+```text
 .claude/channels/<channel>/sessions/
 ├── config.json                     # Tunable thresholds and intervals
 │
@@ -117,6 +117,7 @@ Every message exchange is logged as JSONL (one JSON object per line):
 ```
 
 Before each `claude -p` call, the broker calls `buildContextPrompt()` which combines:
+
 1. The rolling summary (if any compaction has happened)
 2. The last N raw messages (configurable via `stm.contextWindow`)
 
@@ -172,7 +173,7 @@ The scheduler runs inside the broker process via `setInterval`:
 
 The session library is at `lib/sessions/` with the following modules:
 
-```
+```text
 lib/sessions/
 ├── index.ts       # Public re-exports
 ├── types.ts       # SessionConfig, StmMessage, LtmEntry, etc.
