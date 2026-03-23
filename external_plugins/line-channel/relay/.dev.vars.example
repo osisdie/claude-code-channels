@@ -1,0 +1,6 @@
+# Cloudflare Workers secrets — copy to .dev.vars for local dev
+# Set in production via: wrangler secret put <NAME>
+
+LINE_CHANNEL_SECRET=your-channel-secret
+LINE_CHANNEL_ACCESS_TOKEN=your-channel-access-token
+RELAY_SECRET=generate-with-openssl-rand-hex-32

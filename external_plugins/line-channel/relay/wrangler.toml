@@ -1,0 +1,7 @@
+name = "line-relay"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[[kv_namespaces]]
+binding = "LINE_QUEUE"
+id = "a0beebd64d8b43898d5699cf4663bed0"

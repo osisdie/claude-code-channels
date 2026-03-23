@@ -14,6 +14,7 @@ declare -A CHANNEL_PLUGINS=(
 declare -A BROKER_CHANNELS=(
   [slack]="external_plugins/slack-channel/broker.ts"
   [line]="external_plugins/line-channel/broker.ts"
+  [line-relay]="external_plugins/line-channel/broker-relay.ts"
 )
 
 CHANNELS=("${@:-telegram}")
@@ -22,7 +23,9 @@ CHANNELS=("${@:-telegram}")
 for ch in "${CHANNELS[@]}"; do
   broker="${BROKER_CHANNELS[$ch]:-}"
   if [[ -n "$broker" ]]; then
-    export "${ch^^}_STATE_DIR=$PROJECT_DIR/.claude/channels/$ch"
+    # Derive state dir name: line-relay -> line (shared state with line broker)
+    state_name="${ch%%-*}"
+    export "${state_name^^}_STATE_DIR=$PROJECT_DIR/.claude/channels/$state_name"
     echo "Starting $ch broker..."
     exec bun run "$broker"
   fi

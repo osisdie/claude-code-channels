@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-03-23
+
+### Added
+
+- LINE Relay: cloud webhook (Cloudflare Worker) + local bridge
+  - Stable webhook URL (no more ngrok restarts)
+  - KV queue with 1h TTL for message buffering
+  - Content proxy for image downloads
+  - Push API replies via cloud relay
+- Session memory system (`lib/sessions/`)
+  - Short-term memory (STM): per-user JSONL conversation log
+  - Long-term memory (LTM): user profiles and topic notes
+  - Auto-compacting via LLM summarization
+  - `/session` commands: status, clear, profile, forget, export
+  - Background scheduler for cleanup and summaries
+- Safety & abuse prevention (`lib/safety/`)
+  - Content filter: block credentials, jailbreak patterns, oversized input
+  - Daily per-user usage quota (default: 100/day)
+  - Audit logging: append-only JSONL (separate from STM)
+  - System prompt safety rules in all brokers
+- Group chat improvements
+  - Trigger prefix: `/ask`, `/ai`, `/bot`, `/claude` (groups only)
+  - Per-user image buffer with 5-min TTL for image + follow-up flow
+  - Skip AI tags: `[skip ai]`, `[no ai]`, `[ai skip]`
+
 ## [0.3.0] - 2026-03-23
 
 ### Added
@@ -69,6 +94,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - Per-channel documentation structure (`docs/<channel>/`)
 - MIT license
 
+[0.4.0]: https://github.com/osisdie/claude-code-channels/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/osisdie/claude-code-channels/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/osisdie/claude-code-channels/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/osisdie/claude-code-channels/releases/tag/v0.1.0

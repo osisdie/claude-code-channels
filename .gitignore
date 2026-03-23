@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+**/.dev.vars
 
 # Claude Code local settings (per-machine permissions/config)
 .claude/settings.local.json
@@ -14,3 +15,6 @@
 
 # Node / Bun
 node_modules/
+
+# Cloudflare Workers
+.wrangler/
