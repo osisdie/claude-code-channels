@@ -20,7 +20,7 @@ A project-level setup for running [Claude Code](https://docs.anthropic.com/en/do
 | Telegram | Ready   | [docs/telegram/](docs/telegram/) |
 | Discord  | Ready   | [docs/discord/](docs/discord/)   |
 | Slack    | Broker   | [docs/slack/](docs/slack/)      |
-| LINE     | Planned | -                                |
+| LINE     | Broker  | [docs/line/](docs/line/)         |
 
 ## Quick Start
 
@@ -129,10 +129,20 @@ You: approve
 │   │   ├── plan.zh-tw.md     # Planning doc (zh-TW)
 │   │   ├── install.md        # Installation & integration notes
 │   │   └── install.zh-tw.md  # Installation notes (zh-TW)
-│   └── slack/
-│       ├── plan.md           # Integration plan (MCP only, not channel)
+│   ├── slack/
+│   │   ├── plan.md           # Integration plan (MCP only, not channel)
+│   │   ├── install.md        # Installation & integration notes
+│   │   └── install.zh-tw.md  # Installation notes (zh-TW)
+│   └── line/
+│       ├── plan.md           # Integration planning doc
+│       ├── plan.zh-tw.md     # Planning doc (zh-TW)
 │       ├── install.md        # Installation & integration notes
 │       └── install.zh-tw.md  # Installation notes (zh-TW)
+├── external_plugins/
+│   ├── slack-channel/
+│   │   └── broker.ts         # Slack message broker
+│   └── line-channel/
+│       └── broker.ts         # LINE webhook broker
 ├── scripts/
 │   └── verify_slack.sh       # Slack token verification & smoke test
 ├── .github/
@@ -168,6 +178,12 @@ You: approve
 |-----|-------|
 | ![Slack Ask](docs/screenshots/slack/ask.png) | ![Slack Reply](docs/screenshots/slack/reply.png) |
 
+### LINE
+
+| Ask (Flower) | Ask (Weather) |
+|------|------|
+| <img src="docs/screenshots/line/ask_flower.jpg" width="300" alt="LINE Flower"> | <img src="docs/screenshots/line/ask_weather.jpg" width="300" alt="LINE Weather"> |
+
 ### Claude Code Terminal
 
 ![Claude Code Channel Messages](docs/screenshots/claude_code/channel_messages.png)
@@ -182,6 +198,8 @@ You: approve
 - [Discord -- Planning Document](docs/discord/plan.md)
 - [Slack -- Installation & Integration Notes](docs/slack/install.md)
 - [Slack -- Planning Document](docs/slack/plan.md)
+- [LINE -- Installation & Integration Notes](docs/line/install.md)
+- [LINE -- Planning Document](docs/line/plan.md)
 
 ### General
 
