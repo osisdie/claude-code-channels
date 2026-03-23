@@ -13,6 +13,7 @@ declare -A CHANNEL_PLUGINS=(
 # Broker channels (standalone polling, no --channels needed)
 declare -A BROKER_CHANNELS=(
   [slack]="external_plugins/slack-channel/broker.ts"
+  [line]="external_plugins/line-channel/broker.ts"
 )
 
 CHANNELS=("${@:-telegram}")

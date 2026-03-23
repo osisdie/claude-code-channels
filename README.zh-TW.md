@@ -15,7 +15,7 @@
 | Telegram | 可用   | [docs/telegram/](docs/telegram/) |
 | Discord  | 可用   | [docs/discord/](docs/discord/)   |
 | Slack    | Broker | [docs/slack/](docs/slack/)       |
-| LINE     | 規劃中 | -                                |
+| LINE     | Broker | [docs/line/](docs/line/)         |
 
 ## 快速開始
 
@@ -124,10 +124,20 @@ Bot: "即將執行 `rm -rf dist/` — approve 或 reject？"
 │   │   ├── plan.zh-tw.md     # 整合規劃文件（zh-TW）
 │   │   ├── install.md        # 安裝與整合筆記
 │   │   └── install.zh-tw.md  # 安裝與整合筆記（zh-TW）
-│   └── slack/
-│       ├── plan.md           # 整合規劃（僅 MCP，非 channel）
+│   ├── slack/
+│   │   ├── plan.md           # 整合規劃（僅 MCP，非 channel）
+│   │   ├── install.md        # 安裝與整合筆記
+│   │   └── install.zh-tw.md  # 安裝與整合筆記（zh-TW）
+│   └── line/
+│       ├── plan.md           # 整合規劃文件
+│       ├── plan.zh-tw.md     # 整合規劃文件（zh-TW）
 │       ├── install.md        # 安裝與整合筆記
 │       └── install.zh-tw.md  # 安裝與整合筆記（zh-TW）
+├── external_plugins/
+│   ├── slack-channel/
+│   │   └── broker.ts         # Slack 訊息 broker
+│   └── line-channel/
+│       └── broker.ts         # LINE webhook broker
 ├── scripts/
 │   └── verify_slack.sh       # Slack token 驗證與煙霧測試
 ├── .github/
@@ -157,6 +167,8 @@ Bot: "即將執行 `rm -rf dist/` — approve 或 reject？"
 - [Discord — 規劃文件](docs/discord/plan.zh-tw.md)
 - [Slack — 安裝與整合筆記](docs/slack/install.zh-tw.md)
 - [Slack — 規劃文件](docs/slack/plan.md)
+- [LINE — 安裝與整合筆記](docs/line/install.zh-tw.md)
+- [LINE — 規劃文件](docs/line/plan.zh-tw.md)
 
 ### 一般
 

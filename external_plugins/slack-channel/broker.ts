@@ -10,7 +10,7 @@
  *   POLL_INTERVAL=3 bun run broker.ts   # poll every 3s (default: 5)
  */
 
-import { readFileSync, writeFileSync, mkdirSync, chmodSync } from 'fs'
+import { readFileSync, writeFileSync, mkdirSync, chmodSync, appendFileSync } from 'fs'
 import { join, resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { spawn } from 'child_process'
@@ -42,7 +42,26 @@ if (!BOT_TOKEN) {
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL ?? '5', 10) * 1000
 const CLAUDE_BIN = process.env.CLAUDE_BIN ?? 'claude'
 const INBOX_DIR = join(STATE_DIR, 'inbox')
+const LOG_DIR = join(STATE_DIR, 'logs')
 mkdirSync(INBOX_DIR, { recursive: true })
+mkdirSync(LOG_DIR, { recursive: true })
+
+// ── Logging to file + console ──────────────────────────────
+const logFile = join(LOG_DIR, `broker-${new Date().toISOString().slice(0, 10)}.log`)
+
+function log(msg: string): void {
+  const ts = new Date().toISOString()
+  const line = `${ts} ${msg}\n`
+  process.stdout.write(`[broker] ${msg}\n`)
+  appendFileSync(logFile, line)
+}
+
+function logError(msg: string): void {
+  const ts = new Date().toISOString()
+  const line = `${ts} ERROR ${msg}\n`
+  process.stderr.write(`[broker] ${msg}\n`)
+  appendFileSync(logFile, line)
+}
 
 // ── Slack API helpers ──────────────────────────────────────
 // POST with JSON body (chat.postMessage, reactions.add, etc.)
@@ -96,7 +115,7 @@ async function slackUpload(channelId: string, filePath: string, threadTs?: strin
 // ── Bot identity ───────────────────────────────────────────
 const auth = await slack('auth.test')
 const BOT_USER_ID = auth.user_id
-console.log(`[broker] connected as ${auth.user} (${BOT_USER_ID}) on ${auth.team}`)
+log(` connected as ${auth.user} (${BOT_USER_ID}) on ${auth.team}`)
 
 // ── State: track last seen timestamp per channel ───────────
 const CURSOR_FILE = join(STATE_DIR, 'broker_cursors.json')
@@ -137,7 +156,19 @@ async function downloadFile(url: string, name: string): Promise<string> {
 // ── Run claude CLI ─────────────────────────────────────────
 function runClaude(prompt: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const args = ['-p', '--output-format', 'text', prompt]
+    const allowedTools = (process.env.BROKER_ALLOWED_TOOLS
+      ?? 'WebSearch,WebFetch,Bash(curl:*),Bash(python3:*),Read')
+      .split(',')
+    const systemPrompt = process.env.BROKER_SYSTEM_PROMPT
+      ?? 'You are a helpful assistant responding to messages from Slack chat. You have access to tools including WebSearch, Bash, and Read. Use them proactively when the user asks about real-time information (weather, news, prices, etc.) or needs computation. Respond concisely and directly. Use Slack mrkdwn formatting (*bold*, _italic_, bullet lists). Avoid markdown tables — use bullet points instead.'
+    const args = [
+      '-p',
+      '--output-format', 'text',
+      '--system-prompt', systemPrompt,
+      '--allowedTools', ...allowedTools,
+      '--',
+      prompt,
+    ]
 
     const child = spawn(CLAUDE_BIN, args, {
       cwd: PROJECT_DIR,
@@ -151,7 +182,7 @@ function runClaude(prompt: string): Promise<string> {
     child.stderr.on('data', (d: Buffer) => { stderr += d.toString() })
     child.on('close', (code) => {
       if (code !== 0) {
-        console.error(`[broker] claude exit ${code}: ${stderr.slice(0, 200)}`)
+        logError(` claude exit ${code}: ${stderr.slice(0, 200)}`)
         reject(new Error(`claude exited with code ${code}`))
       } else {
         resolve(stdout.trim())
@@ -182,15 +213,33 @@ function chunk(text: string, limit = 3900): string[] {
   return out
 }
 
-// ── Process a single message ───────────────────────────────
+// ── Rate limiting & busy guard ─────────────────────────────
 let processing = false
+const RATE_LIMIT_MS = parseInt(process.env.RATE_LIMIT_MS ?? '5000', 10)
+const lastMessageTime: Record<string, number> = {}
 
+// ── Process a single message ───────────────────────────────
 async function processMessage(channelId: string, msg: any): Promise<void> {
   const text = msg.text ?? ''
   const userId = msg.user
   const ts = msg.ts
 
-  console.log(`[broker] ${userId}: ${text.slice(0, 80)}${text.length > 80 ? '...' : ''}`)
+  log(`${userId}: ${text.slice(0, 80)}${text.length > 80 ? '...' : ''}`)
+
+  // Rate limit — per-user cooldown
+  const now = Date.now()
+  const lastTime = lastMessageTime[userId] ?? 0
+  if (now - lastTime < RATE_LIMIT_MS) {
+    const waitSec = Math.ceil((RATE_LIMIT_MS - (now - lastTime)) / 1000)
+    log(`rate limited: ${userId} (wait ${waitSec}s)`)
+    await slack('chat.postMessage', {
+      channel: channelId,
+      text: `⏳ Please wait ${waitSec}s before sending another message.`,
+      thread_ts: ts,
+    }).catch(() => {})
+    return
+  }
+  lastMessageTime[userId] = now
 
   // React with eyes to ack
   await slack('reactions.add', {
@@ -207,9 +256,9 @@ async function processMessage(channelId: string, msg: any): Promise<void> {
         try {
           const localPath = await downloadFile(f.url_private, f.name ?? f.id)
           imageFiles.push(localPath)
-          console.log(`[broker] downloaded: ${localPath}`)
+          log(` downloaded: ${localPath}`)
         } catch (e) {
-          console.error(`[broker] download failed: ${e}`)
+          logError(` download failed: ${e}`)
         }
       }
     }
@@ -244,7 +293,7 @@ async function processMessage(channelId: string, msg: any): Promise<void> {
       name: 'white_check_mark',
     }).catch(() => {})
   } catch (e) {
-    console.error(`[broker] claude error: ${e}`)
+    logError(` claude error: ${e}`)
     await slack('chat.postMessage', {
       channel: channelId,
       text: `Error: ${e instanceof Error ? e.message : String(e)}`,
@@ -261,9 +310,9 @@ async function processMessage(channelId: string, msg: any): Promise<void> {
 }
 
 // ── Poll loop ──────────────────────────────────────────────
-console.log(`[broker] polling every ${POLL_INTERVAL / 1000}s — DM the bot on Slack`)
-console.log(`[broker] project: ${PROJECT_DIR}`)
-console.log(`[broker] state: ${STATE_DIR}`)
+log(` polling every ${POLL_INTERVAL / 1000}s — DM the bot on Slack`)
+log(` project: ${PROJECT_DIR}`)
+log(` state: ${STATE_DIR}`)
 
 const cursors = loadCursors()
 
@@ -305,7 +354,7 @@ async function poll(): Promise<void> {
         .filter((m: any) => !m.bot_id && !m.subtype && m.user && m.user !== BOT_USER_ID)
         .reverse() // oldest first
       if (messages.length > 0) {
-        console.log(`[broker] ${channelId}: ${messages.length} new message(s)`)
+        log(` ${channelId}: ${messages.length} new message(s)`)
       }
 
       for (const msg of messages) {
@@ -330,7 +379,7 @@ async function poll(): Promise<void> {
       }
     }
   } catch (e) {
-    console.error(`[broker] poll error: ${e}`)
+    logError(` poll error: ${e}`)
   }
 }
 
