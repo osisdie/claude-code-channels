@@ -4,6 +4,9 @@
 [![License: MIT](https://img.shields.io/github/license/osisdie/claude-code-channels)](LICENSE)
 [![GitHub issues](https://img.shields.io/github/issues/osisdie/claude-code-channels)](https://github.com/osisdie/claude-code-channels/issues)
 [![GitHub stars](https://img.shields.io/github/stars/osisdie/claude-code-channels)](https://github.com/osisdie/claude-code-channels/stargazers)
+[![Bun](https://img.shields.io/badge/Bun-%E2%89%A51.0-f9f1e1?logo=bun&logoColor=000)](https://bun.sh/)
+[![Claude Code](https://img.shields.io/badge/Claude_Code-%E2%89%A5v2.1.80-cc785c?logo=anthropic&logoColor=white)](https://docs.anthropic.com/en/docs/claude-code)
+[![GitHub release](https://img.shields.io/github/v/release/osisdie/claude-code-channels)](https://github.com/osisdie/claude-code-channels/releases)
 
 English | [繁體中文](README.zh-TW.md)
 
@@ -15,14 +18,14 @@ A project-level setup for running [Claude Code](https://docs.anthropic.com/en/do
 
 ## Supported Channels
 
-| Channel  | Status  | Docs                               |
-| -------- | ------- | ---------------------------------- |
-| Telegram | Ready   | [docs/telegram/](docs/telegram/)   |
-| Discord  | Ready   | [docs/discord/](docs/discord/)     |
-| Slack    | Broker  | [docs/slack/](docs/slack/)         |
-| LINE     | Broker  | [docs/line/](docs/line/)           |
-| WhatsApp | Broker  | [docs/whatsapp/](docs/whatsapp/)   |
-| Teams    | Planned | [docs/teams/](docs/teams/)         |
+| Channel | Status | Docs |
+| ------- | ------ | ---- |
+| [![Telegram](https://img.shields.io/badge/Telegram-26A5E4?logo=telegram&logoColor=white)](docs/telegram/) | ![Ready](https://img.shields.io/badge/Ready-brightgreen) | [docs/telegram/](docs/telegram/) |
+| [![Discord](https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white)](docs/discord/) | ![Ready](https://img.shields.io/badge/Ready-brightgreen) | [docs/discord/](docs/discord/) |
+| [![Slack](https://img.shields.io/badge/Slack-4A154B?logo=slack&logoColor=white)](docs/slack/) | ![Broker](https://img.shields.io/badge/Broker-blue) | [docs/slack/](docs/slack/) |
+| [![LINE](https://img.shields.io/badge/LINE-00C300?logo=line&logoColor=white)](docs/line/) | ![Broker](https://img.shields.io/badge/Broker-blue) | [docs/line/](docs/line/) |
+| [![WhatsApp](https://img.shields.io/badge/WhatsApp-25D366?logo=whatsapp&logoColor=white)](docs/whatsapp/) | ![Broker](https://img.shields.io/badge/Broker-blue) | [docs/whatsapp/](docs/whatsapp/) |
+| [![Teams](https://img.shields.io/badge/Microsoft_Teams-6264A7?logo=microsoftteams&logoColor=white)](docs/teams/) | ![Planned](https://img.shields.io/badge/Planned-lightgrey) | [docs/teams/](docs/teams/) |
 
 ## Quick Start
 
@@ -58,6 +61,23 @@ A project-level setup for running [Claude Code](https://docs.anthropic.com/en/do
    ```bash
    ./start.sh telegram
    ```
+
+## Docker (Broker Channels)
+
+Each broker channel can run as an isolated Docker container:
+
+```bash
+# Build and run WhatsApp broker
+docker compose up whatsapp
+
+# Run multiple brokers
+docker compose up slack whatsapp
+
+# Run all brokers
+docker compose up
+```
+
+> **Note:** Set `ANTHROPIC_API_KEY` in your `.env` file. The Claude CLI authenticates via API key inside the container.
 
 ## Architecture
 
@@ -105,6 +125,8 @@ You: approve
 ```text
 .
 ├── start.sh                  # Multi-channel launcher
+├── docker-compose.yml        # Per-broker Docker services
+├── docker/                   # Per-channel Dockerfiles
 ├── .env.example              # Environment variable template
 ├── .gitignore                # Excludes secrets & channel state
 ├── CHANGELOG.md
