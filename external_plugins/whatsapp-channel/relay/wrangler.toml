@@ -1,0 +1,7 @@
+name = "whatsapp-relay"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[[kv_namespaces]]
+binding = "WA_QUEUE"
+id = "44dec5bcb61f453290d4b3dc27c0ce43"

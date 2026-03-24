@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-03-24
+
+### Added
+
+- WhatsApp channel integration via relay broker (Cloudflare Worker + local bridge)
+  - Meta Cloud API with HMAC-SHA256 webhook verification
+  - Two-step media download proxy (Graph API)
+  - 4096-char message chunking
+  - Group chat support with trigger prefix
+  - Read receipts on reply
+- Session memory and safety layers integrated into WhatsApp broker
+- `start.sh` help command (`--help`, `-h`, `help`)
+- Explicit relay env vars: `WA_RELAY_URL`, `TEAMS_RELAY_URL`, `LINE_RELAY_URL` (no more shared `RELAY_URL`)
+- Documentation for WhatsApp (plan, install) in EN and zh-TW
+- Microsoft Teams broker (planned, not yet deployed)
+  - Azure Bot Framework with JWT validation (JWKS rotation)
+  - Bot Connector REST API, Teams app manifest
+- GitHub topic: `whatsapp-bot`
+
 ## [0.4.0] - 2026-03-23
 
 ### Added
@@ -94,6 +113,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - Per-channel documentation structure (`docs/<channel>/`)
 - MIT license
 
+[0.5.0]: https://github.com/osisdie/claude-code-channels/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/osisdie/claude-code-channels/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/osisdie/claude-code-channels/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/osisdie/claude-code-channels/compare/v0.1.0...v0.2.0
