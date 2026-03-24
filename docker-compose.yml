@@ -1,0 +1,32 @@
+services:
+  slack:
+    build:
+      context: .
+      dockerfile: docker/slack.Dockerfile
+    env_file: .env
+    volumes:
+      - ./.claude/channels/slack:/app/.claude/channels/slack
+
+  line-relay:
+    build:
+      context: .
+      dockerfile: docker/line-relay.Dockerfile
+    env_file: .env
+    volumes:
+      - ./.claude/channels/line:/app/.claude/channels/line
+
+  whatsapp:
+    build:
+      context: .
+      dockerfile: docker/whatsapp.Dockerfile
+    env_file: .env
+    volumes:
+      - ./.claude/channels/whatsapp:/app/.claude/channels/whatsapp
+
+  teams:
+    build:
+      context: .
+      dockerfile: docker/teams.Dockerfile
+    env_file: .env
+    volumes:
+      - ./.claude/channels/teams:/app/.claude/channels/teams

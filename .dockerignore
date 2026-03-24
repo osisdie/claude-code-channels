@@ -1,0 +1,9 @@
+.git
+.env
+.env.*
+!.env.example
+.claude/
+node_modules/
+.wrangler/
+.playwright-mcp/
+firebase-debug.log
