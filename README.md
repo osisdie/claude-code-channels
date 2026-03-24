@@ -15,12 +15,14 @@ A project-level setup for running [Claude Code](https://docs.anthropic.com/en/do
 
 ## Supported Channels
 
-| Channel  | Status  | Docs                             |
-| -------- | ------- | -------------------------------- |
-| Telegram | Ready   | [docs/telegram/](docs/telegram/) |
-| Discord  | Ready   | [docs/discord/](docs/discord/)   |
-| Slack    | Broker   | [docs/slack/](docs/slack/)      |
-| LINE     | Broker  | [docs/line/](docs/line/)         |
+| Channel  | Status  | Docs                               |
+| -------- | ------- | ---------------------------------- |
+| Telegram | Ready   | [docs/telegram/](docs/telegram/)   |
+| Discord  | Ready   | [docs/discord/](docs/discord/)     |
+| Slack    | Broker  | [docs/slack/](docs/slack/)         |
+| LINE     | Broker  | [docs/line/](docs/line/)           |
+| WhatsApp | Broker  | [docs/whatsapp/](docs/whatsapp/)   |
+| Teams    | Planned | [docs/teams/](docs/teams/)         |
 
 ## Quick Start
 
@@ -133,23 +135,39 @@ You: approve
 │   │   ├── plan.md           # Integration plan (MCP only, not channel)
 │   │   ├── install.md        # Installation & integration notes
 │   │   └── install.zh-tw.md  # Installation notes (zh-TW)
-│   └── line/
+│   ├── line/
+│   │   ├── plan.md           # Integration planning doc
+│   │   ├── plan.zh-tw.md     # Planning doc (zh-TW)
+│   │   ├── install.md        # Installation & integration notes
+│   │   └── install.zh-tw.md  # Installation notes (zh-TW)
+│   ├── whatsapp/
+│   │   ├── plan.md           # Integration planning doc
+│   │   ├── install.md        # Installation & integration notes
+│   │   └── install.zh-tw.md  # Installation notes (zh-TW)
+│   └── teams/
 │       ├── plan.md           # Integration planning doc
-│       ├── plan.zh-tw.md     # Planning doc (zh-TW)
 │       ├── install.md        # Installation & integration notes
 │       └── install.zh-tw.md  # Installation notes (zh-TW)
 ├── external_plugins/
 │   ├── slack-channel/
 │   │   └── broker.ts         # Slack message broker
-│   └── line-channel/
-│       ├── broker.ts         # LINE webhook broker (direct, needs ngrok)
-│       ├── broker-relay.ts   # LINE relay bridge (polls cloud relay)
-│       └── relay/            # Cloudflare Worker (cloud webhook)
+│   ├── line-channel/
+│   │   ├── broker.ts         # LINE webhook broker (direct, needs ngrok)
+│   │   ├── broker-relay.ts   # LINE relay bridge (polls cloud relay)
+│   │   └── relay/            # Cloudflare Worker (cloud webhook)
+│   ├── whatsapp-channel/
+│   │   ├── broker-relay.ts   # WhatsApp relay bridge
+│   │   └── relay/            # Cloudflare Worker (cloud webhook)
+│   └── teams-channel/
+│       ├── broker-relay.ts   # Teams relay bridge
+│       ├── relay/            # Cloudflare Worker (cloud webhook)
+│       └── manifest/         # Teams app manifest for sideloading
 ├── lib/
 │   ├── sessions/             # Session memory (STM + LTM + compacting)
 │   └── safety/               # Content filter, quota, audit logging
 ├── scripts/
-│   └── verify_slack.sh       # Slack token verification & smoke test
+│   ├── verify_slack.sh       # Slack token verification & smoke test
+│   └── verify_whatsapp.sh    # WhatsApp relay verification & smoke test
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
 │   │   ├── bug_report.md
@@ -169,19 +187,19 @@ You: approve
 
 | Ask | Reply |
 |-----|-------|
-| ![Telegram Ask](docs/screenshots/telegram/ask.png) | ![Telegram Reply](docs/screenshots/telegram/reply.png) |
+| <img src="docs/screenshots/telegram/ask.png" width="300" alt="Telegram Ask"> | <img src="docs/screenshots/telegram/reply.png" width="300" alt="Telegram Reply"> |
 
 ### Discord
 
 | Ask | Reply |
 |-----|-------|
-| ![Discord Ask](docs/screenshots/discord/ask.png) | ![Discord Reply](docs/screenshots/discord/reply.png) |
+| <img src="docs/screenshots/discord/ask.png" width="300" alt="Discord Ask"> | <img src="docs/screenshots/discord/reply.png" width="300" alt="Discord Reply"> |
 
 ### Slack
 
 | Ask | Reply |
 |-----|-------|
-| ![Slack Ask](docs/screenshots/slack/ask.png) | ![Slack Reply](docs/screenshots/slack/reply.png) |
+| <img src="docs/screenshots/slack/ask.png" width="300" alt="Slack Ask"> | <img src="docs/screenshots/slack/reply.png" width="300" alt="Slack Reply"> |
 
 ### LINE
 
@@ -194,6 +212,12 @@ You: approve
 | Ask (EN) | Ask (zh-TW) |
 |------|------|
 | <img src="docs/screenshots/line-relay/ask_number_en.png" width="300" alt="LINE Relay EN"> | <img src="docs/screenshots/line-relay/ask_number_zh-tw.png" width="300" alt="LINE Relay zh-TW"> |
+
+### WhatsApp Relay (Cloud)
+
+| Ask (Flower) | Ask (Weather) |
+|------|------|
+| <img src="docs/screenshots/whatsapp-relay/ask_flower.jpg" width="300" alt="WhatsApp Flower"> | <img src="docs/screenshots/whatsapp-relay/ask_weather.jpg" width="300" alt="WhatsApp Weather"> |
 
 ### Claude Code Terminal
 
@@ -212,6 +236,10 @@ You: approve
 - [LINE -- Installation & Integration Notes](docs/line/install.md)
 - [LINE -- Planning Document](docs/line/plan.md)
 - [LINE -- Relay Deployment Guide](docs/line/relay.md)
+- [WhatsApp -- Installation & Integration Notes](docs/whatsapp/install.md)
+- [WhatsApp -- Planning Document](docs/whatsapp/plan.md)
+- [Teams -- Installation & Integration Notes](docs/teams/install.md)
+- [Teams -- Planning Document](docs/teams/plan.md)
 
 ### General
 

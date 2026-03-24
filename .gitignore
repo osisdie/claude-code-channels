@@ -18,3 +18,6 @@ node_modules/
 
 # Cloudflare Workers
 .wrangler/
+
+# Custom
+firebase-debug.log

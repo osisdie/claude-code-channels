@@ -1,10 +1,10 @@
 #!/usr/bin/env bun
 /**
- * LINE Relay Bridge — Local poller for cloud-hosted LINE relay.
+ * WhatsApp Relay Bridge — Local poller for cloud-hosted WhatsApp relay.
  *
- * Polls the Cloudflare Worker relay for queued LINE messages,
+ * Polls the Cloudflare Worker relay for queued WhatsApp messages,
  * processes them with `claude -p`, and sends responses back
- * through the relay's Push API endpoint.
+ * through the relay's Graph API endpoint.
  *
  * Usage:
  *   bun run broker-relay.ts
@@ -20,12 +20,10 @@ import {
   buildContextPrompt,
   loadConfig,
   maybeCompact,
-  deleteMessageById,
   parseSessionCommand,
   executeSessionCommand,
   startScheduler,
 } from '../../lib/sessions/index'
-import type { StmMessage } from '../../lib/sessions/types'
 import { contentFilter, BLOCK_RESPONSE, checkQuota, recordUsage, quotaExceededMessage, auditLog } from '../../lib/safety/index'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -41,20 +39,20 @@ function loadEnvFile(path: string): void {
   } catch {}
 }
 
-const STATE_DIR = process.env.LINE_STATE_DIR
-  ?? resolve(PROJECT_DIR, '.claude/channels/line')
+const STATE_DIR = process.env.WA_STATE_DIR
+  ?? resolve(PROJECT_DIR, '.claude/channels/whatsapp')
 loadEnvFile(join(STATE_DIR, '.env'))
 loadEnvFile(join(PROJECT_DIR, '.env'))
 
-const RELAY_URL = process.env.LINE_RELAY_URL
-const RELAY_SECRET = process.env.LINE_RELAY_SECRET
+const RELAY_URL = process.env.WA_RELAY_URL
+const RELAY_SECRET = process.env.WA_RELAY_SECRET
 
 if (!RELAY_URL) {
-  console.error('LINE_RELAY_URL not found in .env (e.g. https://line-relay.your-worker.workers.dev)')
+  console.error('WA_RELAY_URL not found in .env (e.g. https://whatsapp-relay.your-worker.workers.dev)')
   process.exit(1)
 }
 if (!RELAY_SECRET) {
-  console.error('LINE_RELAY_SECRET not found in .env')
+  console.error('WA_RELAY_SECRET not found in .env')
   process.exit(1)
 }
 
@@ -71,14 +69,14 @@ const logFile = join(LOG_DIR, `relay-${new Date().toISOString().slice(0, 10)}.lo
 function log(msg: string): void {
   const ts = new Date().toISOString()
   const line = `${ts} ${msg}\n`
-  process.stdout.write(`[relay] ${msg}\n`)
+  process.stdout.write(`[whatsapp] ${msg}\n`)
   appendFileSync(logFile, line)
 }
 
 function logError(msg: string): void {
   const ts = new Date().toISOString()
   const line = `${ts} ERROR ${msg}\n`
-  process.stderr.write(`[relay] ${msg}\n`)
+  process.stderr.write(`[whatsapp] ${msg}\n`)
   appendFileSync(logFile, line)
 }
 
@@ -112,9 +110,9 @@ async function relayDelete(path: string, body: any): Promise<void> {
   })
 }
 
-async function downloadContent(messageId: string, fileName: string): Promise<string> {
-  const res = await fetch(`${RELAY_URL}/content/${messageId}`, { headers })
-  if (!res.ok) throw new Error(`content download failed: ${res.status}`)
+async function downloadMedia(mediaId: string, fileName: string): Promise<string> {
+  const res = await fetch(`${RELAY_URL}/media/${mediaId}`, { headers })
+  if (!res.ok) throw new Error(`media download failed: ${res.status}`)
   const buf = Buffer.from(await res.arrayBuffer())
   const path = join(INBOX_DIR, `${Date.now()}-${fileName}`)
   writeFileSync(path, buf)
@@ -153,7 +151,7 @@ SAFETY RULES:
 - If unsure whether a request is safe, err on the side of declining`
 
 const BASE_SYSTEM_PROMPT = process.env.BROKER_SYSTEM_PROMPT
-  ?? `You are a helpful assistant responding to messages from LINE chat. You have access to tools including WebSearch, Bash, and Read. Use them proactively when the user asks about real-time information (weather, news, prices, etc.) or needs computation. IMPORTANT formatting rules for LINE chat: 1) NEVER use markdown tables (| col | col |) — they are unreadable on mobile. Use bullet points or numbered lists instead. 2) Keep responses concise — prefer short paragraphs. 3) Use plain text formatting, no markdown headers (#). 4) Use emoji sparingly for visual structure.\n${SAFETY_RULES}`
+  ?? `You are a helpful assistant responding to messages from WhatsApp. You have access to tools including WebSearch, Bash, and Read. Use them proactively when the user asks about real-time information (weather, news, prices, etc.) or needs computation. IMPORTANT formatting rules for WhatsApp: 1) Use *bold* and _italic_ (WhatsApp native formatting). 2) NEVER use markdown tables — they are unreadable on mobile. Use bullet points or numbered lists instead. 3) Keep responses concise for mobile readability. 4) Use emoji sparingly for visual structure.\n${SAFETY_RULES}`
 
 // ── Run claude CLI ─────────────────────────────────────────
 function runClaude(prompt: string, contextSystemPrompt: string): Promise<string> {
@@ -218,16 +216,14 @@ function extractTrigger(text: string): { triggered: boolean; prompt: string } {
 }
 
 // ── Per-user image buffer (for group: image → /ask flow) ───
-// Key: `${userId}:${groupId}`, value: image file paths
 const imageBuffer: Record<string, string[]> = {}
-const IMAGE_BUFFER_TTL = 5 * 60 * 1000 // 5 minutes
+const IMAGE_BUFFER_TTL = 5 * 60 * 1000
 const imageBufferTimers: Record<string, ReturnType<typeof setTimeout>> = {}
 
 function bufferImage(userId: string, groupId: string, path: string): void {
   const key = `${userId}:${groupId}`
   if (!imageBuffer[key]) imageBuffer[key] = []
   imageBuffer[key].push(path)
-  // Auto-expire after TTL
   if (imageBufferTimers[key]) clearTimeout(imageBufferTimers[key])
   imageBufferTimers[key] = setTimeout(() => {
     delete imageBuffer[key]
@@ -253,80 +249,70 @@ const lastMessageTime: Record<string, number> = {}
 
 // ── Process a single message ───────────────────────────────
 async function processMessage(msg: any): Promise<void> {
-  const { userId, groupId, sourceType, messageType, messageId, text, id } = msg
+  const { from: userId, type: messageType, text, mediaId, caption, waMessageId, isGroup, groupId, id } = msg
 
   if (!userId) return
 
   // Access control
   const access = loadAccess()
-  const isGroup = sourceType === 'group' || sourceType === 'room'
 
   if (isGroup) {
     if (groupId && !access.groups[groupId]) return
     const policy = access.groups[groupId]
     if (policy?.allowFrom?.length > 0 && !policy.allowFrom.includes(userId)) return
-    log(`group:${groupId} ${userId}: [${messageType}] ${(text ?? '').slice(0, 80)}`)
+    log(`group:${groupId} ${userId}: [${messageType}] ${(text ?? caption ?? '').slice(0, 80)}`)
   } else {
     if (access.allowFrom.length > 0 && !access.allowFrom.includes(userId)) return
-    log(`${userId}: [${messageType}] ${(text ?? '').slice(0, 80)}`)
+    log(`${userId}: [${messageType}] ${(text ?? caption ?? '').slice(0, 80)}`)
   }
 
-  // Skip AI — user explicitly opted out of this message
-  if (shouldSkipAI(text ?? '')) {
+  // Skip AI
+  if (shouldSkipAI(text ?? caption ?? '')) {
     log(`skip-ai: ${userId}`)
     return
   }
 
-  // Download images/files
+  // Download media
   const imageFiles: string[] = []
-  if (messageType === 'image' && messageId) {
+  if (mediaId && (messageType === 'image' || messageType === 'document' || messageType === 'audio' || messageType === 'video')) {
+    const ext = messageType === 'image' ? 'jpg' : messageType === 'audio' ? 'ogg' : messageType === 'video' ? 'mp4' : 'bin'
+    const fname = msg.fileName ?? `${mediaId}.${ext}`
     try {
-      const path = await downloadContent(messageId, `${messageId}.jpg`)
+      const path = await downloadMedia(mediaId, fname)
       imageFiles.push(path)
       log(`downloaded: ${path}`)
     } catch (e) {
       logError(`download failed: ${e}`)
     }
-  } else if (messageType === 'file' && messageId) {
-    const fileName = msg.fileName ?? `${messageId}.bin`
-    try {
-      const path = await downloadContent(messageId, fileName)
-      imageFiles.push(path)
-      log(`downloaded: ${path}`)
-    } catch (e) {
-      logError(`download failed: ${e}`)
-    }
-  } else if (messageType === 'sticker') {
+  } else if (messageType === 'sticker' || messageType === 'location' || messageType === 'contacts') {
     return
   } else if (messageType !== 'text') {
     return
   }
 
-  // /session commands — works in both DM and group (no trigger prefix needed)
-  if ((text ?? '').startsWith('/session')) {
-    const cmd = parseSessionCommand(text!)
+  // /session commands
+  const userText = text ?? caption ?? ''
+  if (userText.startsWith('/session')) {
+    const cmd = parseSessionCommand(userText)
     if (cmd) {
       const result = executeSessionCommand(STATE_DIR, userId, cmd)
-      await relayPost('/reply', { userId, groupId, text: result })
-      log(`session command: ${text}`)
+      await relayPost('/reply', { to: userId, text: result, waMessageId })
+      log(`session command: ${userText}`)
       return
     }
   }
 
   // ── Group: trigger prefix + image buffer ─────────────────
   if (isGroup) {
-    // Images in group: silently buffer per-user, don't respond
-    if (imageFiles.length > 0 && !text) {
+    if (imageFiles.length > 0 && !userText) {
       for (const f of imageFiles) bufferImage(userId, groupId ?? '', f)
       log(`buffered ${imageFiles.length} image(s) for ${userId}`)
       return
     }
 
-    // Text in group: only respond to trigger prefixes
-    const trigger = extractTrigger(text ?? '')
-    if (!trigger.triggered) return // silently ignore non-triggered messages
+    const trigger = extractTrigger(userText)
+    if (!trigger.triggered) return
 
-    // Combine trigger prompt with any buffered images
     const bufferedImages = consumeImageBuffer(userId, groupId ?? '')
     const allImages = [...imageFiles, ...bufferedImages]
 
@@ -339,32 +325,25 @@ async function processMessage(msg: any): Promise<void> {
     }
     if (!prompt) return
 
-    // Rate limit
     const now = Date.now()
-    const lastTime = lastMessageTime[userId] ?? 0
-    if (now - lastTime < RATE_LIMIT_MS) {
+    if (now - (lastMessageTime[userId] ?? 0) < RATE_LIMIT_MS) {
       log(`rate limited: ${userId}`)
       return
     }
     lastMessageTime[userId] = now
 
-    // Continue to STM + Claude below with this prompt
-    return processWithClaude(userId, groupId, prompt, allImages)
+    return processWithClaude(userId, groupId, prompt, allImages, waMessageId)
   }
 
   // ── DM: process everything directly ──────────────────────
-
-  // Rate limit
   const now = Date.now()
-  const lastTime = lastMessageTime[userId] ?? 0
-  if (now - lastTime < RATE_LIMIT_MS) {
+  if (now - (lastMessageTime[userId] ?? 0) < RATE_LIMIT_MS) {
     log(`rate limited: ${userId}`)
     return
   }
   lastMessageTime[userId] = now
 
-  // Build prompt
-  let prompt = text ?? ''
+  let prompt = userText
   if (imageFiles.length > 0) {
     const fileList = imageFiles.map(f => `  - ${f}`).join('\n')
     prompt = prompt
@@ -373,41 +352,40 @@ async function processMessage(msg: any): Promise<void> {
   }
   if (!prompt) return
 
-  return processWithClaude(userId, groupId, prompt, imageFiles)
+  return processWithClaude(userId, undefined, prompt, imageFiles, waMessageId)
 }
 
 // ── Process with Claude (shared by DM and group) ───────────
-async function processWithClaude(userId: string, groupId: string | undefined, prompt: string, imageFiles: string[]): Promise<void> {
+async function processWithClaude(userId: string, groupId: string | undefined, prompt: string, imageFiles: string[], waMessageId?: string): Promise<void> {
   const startTime = Date.now()
 
-  // Content filter — block dangerous input before reaching Claude
+  // Content filter
   const filterResult = contentFilter(prompt)
   if (filterResult.action === 'block') {
     log(`blocked: ${userId} — ${filterResult.reason}`)
-    auditLog(STATE_DIR, { ts: new Date().toISOString(), userId, groupId, channel: 'line-relay', prompt: prompt.slice(0, 200), filtered: `block:${filterResult.reason}` })
-    await relayPost('/reply', { userId, groupId, text: BLOCK_RESPONSE })
+    auditLog(STATE_DIR, { ts: new Date().toISOString(), userId, groupId, channel: 'whatsapp', prompt: prompt.slice(0, 200), filtered: `block:${filterResult.reason}` })
+    await relayPost('/reply', { to: userId, text: BLOCK_RESPONSE, waMessageId })
     return
   }
   if (filterResult.action === 'warn') {
     log(`warn: ${userId} — ${filterResult.reason}`)
-    auditLog(STATE_DIR, { ts: new Date().toISOString(), userId, groupId, channel: 'line-relay', prompt: prompt.slice(0, 200), filtered: `warn:${filterResult.reason}` })
+    auditLog(STATE_DIR, { ts: new Date().toISOString(), userId, groupId, channel: 'whatsapp', prompt: prompt.slice(0, 200), filtered: `warn:${filterResult.reason}` })
   }
 
-  // Usage quota check
+  // Usage quota
   const quota = checkQuota(STATE_DIR, userId)
   if (!quota.allowed) {
     log(`quota exceeded: ${userId} (${quota.used}/${quota.limit})`)
-    await relayPost('/reply', { userId, groupId, text: quotaExceededMessage(quota) })
+    await relayPost('/reply', { to: userId, text: quotaExceededMessage(quota), waMessageId })
     return
   }
 
   // Log user message to STM
-  const ts = new Date().toISOString()
   stmAppend(STATE_DIR, userId, {
-    ts,
+    ts: new Date().toISOString(),
     role: 'user',
     text: prompt,
-    channel: 'line-relay',
+    channel: 'whatsapp',
     groupId,
     ...(imageFiles.length > 0 ? { attachments: imageFiles.map(f => ({ type: 'image', path: f })) } : {}),
   })
@@ -422,36 +400,28 @@ async function processWithClaude(userId: string, groupId: string | undefined, pr
     processing = true
     const response = await runClaude(prompt, fullSystemPrompt)
 
-    // Log assistant response to STM
     stmAppend(STATE_DIR, userId, {
       ts: new Date().toISOString(),
       role: 'assistant',
       text: response,
-      channel: 'line-relay',
+      channel: 'whatsapp',
     })
 
-    // Auto-compact if messages exceed threshold
     maybeCompact(STATE_DIR, userId, sessionConfig, CLAUDE_BIN).catch(() => {})
 
-    // Send response through relay
-    await relayPost('/reply', {
-      userId,
-      groupId,
-      text: response,
-    })
+    await relayPost('/reply', { to: userId, text: response, waMessageId })
 
-    // Record usage + audit
     recordUsage(STATE_DIR, userId)
-    auditLog(STATE_DIR, { ts: new Date().toISOString(), userId, groupId, channel: 'line-relay', prompt: prompt.slice(0, 500), response: response.slice(0, 500), durationMs: Date.now() - startTime })
+    auditLog(STATE_DIR, { ts: new Date().toISOString(), userId, groupId, channel: 'whatsapp', prompt: prompt.slice(0, 500), response: response.slice(0, 500), durationMs: Date.now() - startTime })
 
     log(`responded (${response.length} chars)`)
   } catch (e) {
-    auditLog(STATE_DIR, { ts: new Date().toISOString(), userId, groupId, channel: 'line-relay', prompt: prompt.slice(0, 500), error: String(e) })
+    auditLog(STATE_DIR, { ts: new Date().toISOString(), userId, groupId, channel: 'whatsapp', prompt: prompt.slice(0, 500), error: String(e) })
     logError(`claude error: ${e}`)
     await relayPost('/reply', {
-      userId,
-      groupId,
+      to: userId,
       text: `Error: ${e instanceof Error ? e.message : String(e)}`,
+      waMessageId,
     }).catch(() => {})
   } finally {
     processing = false
@@ -477,19 +447,10 @@ async function poll(): Promise<void> {
     const consumedKeys: string[] = []
 
     for (const msg of messages) {
-      // Handle unsend events — remove from STM
-      if (msg.type === 'unsend' && msg.userId && msg.messageId) {
-        const deleted = deleteMessageById(STATE_DIR, msg.userId, msg.messageId)
-        log(`unsend: ${msg.userId} msgId=${msg.messageId} ${deleted ? 'removed' : 'not found'}`)
-        consumedKeys.push(msg.id)
-        continue
-      }
-
       await processMessage(msg)
       consumedKeys.push(msg.id)
     }
 
-    // Ack consumed messages
     if (consumedKeys.length > 0) {
       await relayDelete('/messages', { keys: consumedKeys })
     }
@@ -498,7 +459,7 @@ async function poll(): Promise<void> {
   }
 }
 
-// Start background scheduler (STM expiry, log rotation, summaries)
+// Start background scheduler
 startScheduler(STATE_DIR, sessionConfig, CLAUDE_BIN)
 
 // Initial poll

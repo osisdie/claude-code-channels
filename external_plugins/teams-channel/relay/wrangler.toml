@@ -1,0 +1,7 @@
+name = "teams-relay"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[[kv_namespaces]]
+binding = "TEAMS_QUEUE"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
