@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.0] - 2026-03-24
+
+### Highlights
+
+- First stable release
+- 6 messaging channels: Telegram, Discord, Slack, LINE, WhatsApp, Teams (planned)
+- Session memory (STM + LTM) with auto-compacting
+- Safety & abuse prevention (content filter, quota, audit)
+- Docker support for broker channels
+- SNS official logos and enhanced badges in README
+- Full documentation in English and Traditional Chinese
+
 ## [0.5.0] - 2026-03-24
 
 ### Added
@@ -113,6 +125,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - Per-channel documentation structure (`docs/<channel>/`)
 - MIT license
 
+[1.0.0]: https://github.com/osisdie/claude-code-channels/compare/v0.5.0...v1.0.0
 [0.5.0]: https://github.com/osisdie/claude-code-channels/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/osisdie/claude-code-channels/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/osisdie/claude-code-channels/compare/v0.2.0...v0.3.0
