@@ -1,0 +1,52 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.0.0",
+  "id": "REPLACE_WITH_MICROSOFT_APP_ID",
+  "developer": {
+    "name": "Claude Code Channels",
+    "websiteUrl": "https://github.com/anthropics/claude-code",
+    "privacyUrl": "https://www.anthropic.com/privacy",
+    "termsOfUseUrl": "https://www.anthropic.com/terms"
+  },
+  "name": {
+    "short": "Claude Bot",
+    "full": "Claude Code Bot for Microsoft Teams"
+  },
+  "description": {
+    "short": "AI assistant powered by Claude",
+    "full": "Claude Code AI assistant for Microsoft Teams. Ask questions, search the web, run code, and get help with any task — directly in Teams chat."
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#D97757",
+  "bots": [
+    {
+      "botId": "REPLACE_WITH_MICROSOFT_APP_ID",
+      "scopes": ["personal", "team", "groupChat"],
+      "commandLists": [
+        {
+          "scopes": ["personal", "team", "groupChat"],
+          "commands": [
+            {
+              "title": "/ask",
+              "description": "Ask Claude a question"
+            },
+            {
+              "title": "/session status",
+              "description": "View session memory status"
+            },
+            {
+              "title": "/session clear",
+              "description": "Clear conversation memory"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": []
+}
