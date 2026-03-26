@@ -166,13 +166,11 @@ if [[ -z "$RELAY_URL" || -z "$RELAY_SECRET" ]]; then
   check "Reply endpoint" "warn"
 else
   # Send an invalid body to test the endpoint is reachable and auth works
-  REPLY_RESP=$(curl -s -w "\n%{http_code}" -X POST \
+  REPLY_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
     -H "Authorization: Bearer $RELAY_SECRET" \
     -H "Content-Type: application/json" \
     -d '{}' \
-    "$RELAY_URL/reply" 2>/dev/null || echo -e "\n000")
-  REPLY_BODY=$(echo "$REPLY_RESP" | head -n -1)
-  REPLY_CODE=$(echo "$REPLY_RESP" | tail -n 1)
+    "$RELAY_URL/reply" 2>/dev/null || echo "000")
 
   if [[ "$REPLY_CODE" == "400" ]]; then
     echo "  POST /reply -> 400 (auth OK, correctly requires userId+text)"
