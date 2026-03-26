@@ -144,25 +144,28 @@ async function handleGetMessages(request: Request, env: Env): Promise<Response> 
   const authErr = checkAuth(request, env)
   if (authErr) return authErr
 
-  // List both msg: and unsend: events
-  const msgKeys = await env.LINE_QUEUE.list({ prefix: 'msg:' })
-  const unsendKeys = await env.LINE_QUEUE.list({ prefix: 'unsend:' })
-  const keys = { keys: [...msgKeys.keys, ...unsendKeys.keys] }
-  const messages: QueuedMessage[] = []
+  try {
+    // Single list() call — keys are prefixed with msg: or unsend:, both sort lexically
+    const allKeys = await env.LINE_QUEUE.list()
+    const messages: QueuedMessage[] = []
 
-  for (const key of keys.keys) {
-    const val = await env.LINE_QUEUE.get(key.name)
-    if (val) {
-      try {
-        messages.push(JSON.parse(val))
-      } catch {}
+    for (const key of allKeys.keys) {
+      const val = await env.LINE_QUEUE.get(key.name)
+      if (val) {
+        try {
+          messages.push(JSON.parse(val))
+        } catch {}
+      }
     }
-  }
 
-  if (messages.length > 0) {
-    console.log(`[messages] returning ${messages.length} queued message(s)`)
+    if (messages.length > 0) {
+      console.log(`[messages] returning ${messages.length} queued message(s)`)
+    }
+    return json({ messages })
+  } catch (e: any) {
+    console.error(`[messages] error: ${e?.message ?? e}`)
+    return json({ error: e?.message ?? 'internal error', messages: [] }, 500)
   }
-  return json({ messages })
 }
 
 async function handleDeleteMessages(request: Request, env: Env): Promise<Response> {
