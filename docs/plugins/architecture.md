@@ -75,7 +75,7 @@ Declares the MCP tools, channel capability, and metadata:
 ### Key differences
 
 - **Discord** `reply`: max 2000 chars/chunk, 25MB/file, 10 files max
-- **Telegram** `reply`: max 4096 chars/chunk, 50MB/file, supports MarkdownV2 format
+- **Telegram** `reply`: max 4096 chars/chunk, 50MB/file, supports MarkdownV2 format, supports inline keyboard buttons (`buttons` param — local fork)
 - **Discord** has `fetch_messages` for channel history lookback; Telegram has no equivalent
 
 ---
@@ -197,13 +197,66 @@ const STATE_DIR = process.env.DISCORD_STATE_DIR
 | **Gitignored**           | `.claude/` is in `.gitignore`                       |
 | **Portable**             | State travels with the project                      |
 
-### Trade-offs
+### Skill path resolution (fixed in local fork)
 
-| Trade-off                          | Impact                                            |
-| ---------------------------------- | ------------------------------------------------- |
-| **Skill path mismatch (Issue #1)** | Skills hardcode `~/.claude/channels/<channel>/`, ignoring `*_STATE_DIR`. Pairing fails without workaround. See [Known Issues](../issues.md) |
-| **Manual workaround needed**       | Must complete pairing at correct project-level path until upstream fix lands |
-| **PR #866 pending**                | Fix submitted to add env var resolution to skills  |
+The official plugin skills hardcode `~/.claude/channels/<channel>/`, ignoring
+`*_STATE_DIR`. This project's local forks (`external_plugins/`) fix this by
+using `$TELEGRAM_STATE_DIR` / `$DISCORD_STATE_DIR` with a fallback to the
+global path. See the `$STATE` shorthand in each skill's SKILL.md.
+
+---
+
+## Local Plugin Fork (Symlink Architecture)
+
+This project forks the official channel plugins into `external_plugins/` for
+version control and customization. Claude Code's `--channels` flag only
+accepts official plugin identifiers and re-extracts plugins on startup,
+overwriting the cache. To work around this, `start.sh` symlinks the plugin
+cache directory to the local fork.
+
+### How it works
+
+```text
+~/.claude/plugins/cache/claude-plugins-official/telegram/0.0.4/
+    ↓ symlink (created by start.sh)
+<project>/external_plugins/telegram-channel/
+    ├── .claude-plugin/plugin.json   # Plugin manifest
+    ├── .mcp.json                    # MCP server config
+    ├── package.json                 # Dependencies
+    ├── server.ts                    # Forked server (source of truth)
+    ├── skills/                      # Access & configure skills
+    ├── node_modules/                # (gitignored)
+    └── bun.lock
+```
+
+### Startup flow
+
+1. `start.sh` resolves the plugin cache base directory
+2. For each version dir, creates a symlink → `external_plugins/<channel>-channel/`
+3. Backs up original dirs as `<version>.official/` (gitignored)
+4. Installs `node_modules` if missing
+5. Launches `claude --channels plugin:<channel>@claude-plugins-official`
+6. Claude Code follows the symlink and runs our local `server.ts`
+
+### Why symlink instead of sync-to-cache
+
+| Approach | Problem |
+| -------- | ------- |
+| Pre-sync `cp` before `claude` | Claude re-extracts on startup, overwrites our copy |
+| Background watcher | Race condition — bun may load before patch |
+| `--plugin-dir` | Doesn't support channel plugins (SessionStart hook error) |
+| `--mcp-config` | No channel notification capability |
+| **Symlink (chosen)** | Claude sees the dir exists, skips extraction |
+
+### Contributor workflow
+
+```bash
+git pull                    # Get latest plugin code
+./start.sh telegram         # Auto-symlink + auto-install deps + launch
+```
+
+No manual cache management needed. All plugin changes go through
+`external_plugins/` in version control.
 
 ---
 

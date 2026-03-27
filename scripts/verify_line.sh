@@ -5,9 +5,10 @@
 #   ./scripts/verify_line.sh
 #
 # Reads from (in priority order):
-#   1. Environment variables
-#   2. Channel .env file (.claude/channels/line/.env)
-#   3. Project .env file
+#   1. Environment variables (LINE_STATE_DIR override)
+#   2. Project-based channel dir (.claude/channels/line/)
+#   3. Global channel dir (~/.claude/channels/line/)
+#   4. Project .env file
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -24,7 +25,22 @@ load_env() {
   fi
 }
 
-STATE_DIR="${LINE_STATE_DIR:-$PROJECT_DIR/.claude/channels/line}"
+# Resolve STATE_DIR: env override > project-based > global fallback
+STATE_LOCATION=""
+if [[ -n "${LINE_STATE_DIR:-}" ]]; then
+  STATE_DIR="$LINE_STATE_DIR"
+  STATE_LOCATION="env-override"
+elif [[ -d "$PROJECT_DIR/.claude/channels/line" ]]; then
+  STATE_DIR="$PROJECT_DIR/.claude/channels/line"
+  STATE_LOCATION="project"
+elif [[ -d "$HOME/.claude/channels/line" ]]; then
+  STATE_DIR="$HOME/.claude/channels/line"
+  STATE_LOCATION="global"
+else
+  STATE_DIR="$PROJECT_DIR/.claude/channels/line"
+  STATE_LOCATION="project (not yet created)"
+fi
+
 load_env "$STATE_DIR/.env"
 load_env "$PROJECT_DIR/.env"
 
@@ -54,6 +70,16 @@ check() {
 echo "========================================"
 echo "  LINE RELAY VERIFICATION"
 echo "========================================"
+echo ""
+echo "  State dir: $STATE_DIR"
+echo "  Location:  $STATE_LOCATION"
+if [[ "$STATE_LOCATION" == "global" ]]; then
+  echo ""
+  echo "  NOTE: Using GLOBAL state dir (~/.claude/channels/line/)."
+  echo "        Project-based config is recommended for multi-project setups."
+  echo "        To migrate: move $STATE_DIR to $PROJECT_DIR/.claude/channels/line/"
+  echo "        Or set LINE_STATE_DIR in your project .env"
+fi
 echo ""
 
 # ── 1. Check required env vars ──────────────────────────────

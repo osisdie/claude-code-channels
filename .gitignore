@@ -19,5 +19,10 @@ node_modules/
 # Cloudflare Workers
 .wrangler/
 
+# Official plugin backups (created by start.sh symlink)
+*.official/
+
 # Custom
 firebase-debug.log
+tmp/
+output/
