@@ -91,7 +91,7 @@ for ch in "${CHANNELS[@]}"; do
 done
 
 # Otherwise, use Claude Code --channels
-CHANNEL_ARGS=""
+CHANNEL_ARGS=()
 for ch in "${CHANNELS[@]}"; do
   plugin="${CHANNEL_PLUGINS[$ch]:-}"
   if [[ -z "$plugin" ]]; then
@@ -100,7 +100,7 @@ for ch in "${CHANNELS[@]}"; do
     exit 1
   fi
   export "${ch^^}_STATE_DIR=$PROJECT_DIR/.claude/channels/$ch"
-  CHANNEL_ARGS+=" --channels $plugin"
+  CHANNEL_ARGS+=(--channels "$plugin")
 
   # Symlink plugin cache → local fork.
   # Claude Code re-extracts official plugins on startup, overwriting the cache.
@@ -140,4 +140,4 @@ for ch in "${CHANNELS[@]}"; do
 done
 
 echo "Starting Claude Code with channel(s): ${CHANNELS[*]}"
-exec claude $CHANNEL_ARGS
+exec claude "${CHANNEL_ARGS[@]}"
