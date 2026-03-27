@@ -195,3 +195,62 @@ Claude Code Session (local, full filesystem access)
 3. **State directory** - Set `TELEGRAM_STATE_DIR` to project-level path for per-project isolation
 4. **Bot API limitation** - No message history or search; only real-time messages are visible
 5. **MarkdownV2 formatting** - Requires escaping special characters per Telegram's rules; use `format: "text"` for plain messages to avoid issues
+
+---
+
+## Local Fork Setup (Important for Contributors)
+
+This project uses a **local fork** of the official Telegram plugin at
+`external_plugins/telegram-channel/` with added features (inline buttons,
+session memory STM/LTM/Compactor, `/session` commands).
+
+### Always use `./start.sh`
+
+The `start.sh` script handles all the wiring:
+
+1. Exports `TELEGRAM_STATE_DIR` pointing to project-local `.claude/channels/telegram/`
+2. Patches the plugin cache `.mcp.json` so Claude Code runs the local fork code
+3. Installs dependencies if `node_modules/` is missing
+4. Launches with the correct `--channels plugin:telegram@claude-plugins-official` flag
+
+**Do not launch manually** with `claude --channels ...`. The official plugin
+cache gets overwritten on every `claude plugin update` — `start.sh` re-patches
+it on each start.
+
+### Required settings
+
+`.claude/settings.local.json` must include:
+
+```json
+{
+  "channelsEnabled": true
+}
+```
+
+Without this, outbound (reply) works but **inbound messages are silently
+dropped** by Claude Code.
+
+### Credential isolation
+
+Bot token and access control must only exist in the **project-local** state
+directory:
+
+```text
+.claude/channels/telegram/.env          # TELEGRAM_BOT_TOKEN=...
+.claude/channels/telegram/access.json   # allowlist, groups, policy
+```
+
+**Never** symlink or copy these to `~/.claude/channels/telegram/`. That global
+path is the official plugin's default and would expose credentials to every
+Claude Code session on the machine.
+
+### Common pitfalls
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Two telegram processes | Official plugin loaded from both marketplace and cache paths | Uninstall and reinstall: `claude plugin uninstall telegram@claude-plugins-official` then `claude plugin install telegram@claude-plugins-official` |
+| Outbound works, inbound silent | `channelsEnabled: true` missing or wrong `--channels` tag | Add setting; use `plugin:telegram@...` not `server:telegram` |
+| 409 Conflict in logs | Two processes polling the same bot token | Kill stale processes; only one session per bot token |
+| STM not writing | `TELEGRAM_STATE_DIR` not set | Use `./start.sh` (exports it automatically) |
+| `/session` commands ignored | Server needs restart after code changes | Restart the Claude Code session |
+| Plugin update breaks fork | `claude plugin update` overwrites cache | Re-run `./start.sh` to re-patch |
