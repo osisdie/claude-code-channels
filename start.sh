@@ -6,8 +6,8 @@ cd "$PROJECT_DIR"
 
 # Channel plugins (bidirectional DM bridge via --channels).
 # Source of truth is external_plugins/<name>-channel/ (version-controlled).
-# On start, we symlink the plugin cache dir → local dir so Claude Code
-# loads our fork instead of the official version.
+# On start, we patch the plugin cache .mcp.json so Claude Code runs our
+# local fork code with project-local state dir. No symlinks needed.
 declare -A CHANNEL_PLUGINS=(
   [telegram]="plugin:telegram@claude-plugins-official"
   [discord]="plugin:discord@claude-plugins-official"
@@ -36,6 +36,30 @@ resolve_cache_base() {
   plugin_name="${plugin_name%%@*}"
   local plugin_org="${plugin_id##*@}"
   echo "$HOME/.claude/plugins/cache/$plugin_org/$plugin_name"
+}
+
+# Patch the .mcp.json in a plugin cache version dir so it runs our local
+# fork code with the project-local state dir.
+# Args: $1=cache_version_dir  $2=local_abs_path  $3=channel_name
+patch_cache_mcp() {
+  local ver_dir="$1" local_abs="$2" ch_name="$3"
+  local mcp_file="$ver_dir/.mcp.json"
+  local state_dir="$PROJECT_DIR/.claude/channels/$ch_name"
+  local env_key="${ch_name^^}_STATE_DIR"
+
+  cat > "$mcp_file" <<MCPEOF
+{
+  "mcpServers": {
+    "$ch_name": {
+      "command": "bun",
+      "args": ["run", "--cwd", "$local_abs", "--shell=bun", "--silent", "start"],
+      "env": {
+        "$env_key": "$state_dir"
+      }
+    }
+  }
+}
+MCPEOF
 }
 
 # ── Usage / help ──────────────────────────────────────────
@@ -102,9 +126,8 @@ for ch in "${CHANNELS[@]}"; do
   export "${ch^^}_STATE_DIR=$PROJECT_DIR/.claude/channels/$ch"
   CHANNEL_ARGS+=(--channels "$plugin")
 
-  # Symlink plugin cache → local fork.
-  # Claude Code re-extracts official plugins on startup, overwriting the cache.
-  # Symlinking the version dir ensures our fork is always loaded.
+  # Patch plugin cache .mcp.json → local fork code + project-local state dir.
+  # This is idempotent and re-applied on every start (survives plugin updates).
   local_dir="${CHANNEL_LOCAL[$ch]:-}"
   if [[ -n "$local_dir" && -f "$local_dir/server.ts" ]]; then
     local_abs="$(cd "$local_dir" && pwd)"
@@ -116,20 +139,17 @@ for ch in "${CHANNELS[@]}"; do
       bun install --cwd "$local_abs" --no-summary
     fi
 
-    # Find existing version dir(s) and symlink each to our local fork
+    # Patch each cached version dir's .mcp.json
     if [[ -d "$cache_base" ]]; then
       for ver_dir in "$cache_base"/*/; do
         [[ -d "$ver_dir" ]] || continue
-        ver_name="$(basename "$ver_dir")"
-        target="$cache_base/$ver_name"
-        # Skip if already a symlink to the right place
-        if [[ -L "$target" ]] && [[ "$(readlink "$target")" == "$local_abs" ]]; then
-          continue
+        # Restore original dir if a previous symlink exists
+        if [[ -L "$ver_dir" ]]; then
+          rm "$ver_dir"
+          [[ -d "${ver_dir}.official" ]] && mv "${ver_dir}.official" "$ver_dir"
         fi
-        # Backup original and create symlink
-        [[ -d "$target" && ! -L "$target" ]] && mv "$target" "${target}.official"
-        ln -sfn "$local_abs" "$target"
-        echo "Linked $target → $local_abs"
+        patch_cache_mcp "$ver_dir" "$local_abs" "$ch"
+        echo "Patched $(basename "$ver_dir")/.mcp.json → $local_abs"
       done
     else
       echo "WARNING: plugin cache not found for $ch"
