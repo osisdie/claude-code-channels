@@ -2,7 +2,10 @@
   "mcpServers": {
     "telegram": {
       "command": "bun",
-      "args": ["run", "--cwd", "${CLAUDE_PLUGIN_ROOT}", "--shell=bun", "--silent", "start"]
+      "args": ["run", "--cwd", "${CLAUDE_PLUGIN_ROOT}", "--shell=bun", "--silent", "start"],
+      "env": {
+        "TELEGRAM_STATE_DIR": "${CLAUDE_PLUGIN_ROOT}/../../.claude/channels/telegram"
+      }
     }
   }
 }

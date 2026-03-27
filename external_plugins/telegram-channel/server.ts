@@ -27,7 +27,15 @@ import type { ReactionTypeEmoji } from 'grammy/types'
 import { randomBytes } from 'crypto'
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, statSync, renameSync, realpathSync, chmodSync } from 'fs'
 import { homedir } from 'os'
-import { join, extname, sep } from 'path'
+import { join, extname, sep, resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+// Session memory (STM / LTM / Compactor)
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const LIB_DIR = resolve(__dirname, '..', '..', 'lib', 'sessions')
+const { appendMessage, buildContextPrompt, loadConfig } = await import(join(LIB_DIR, 'index.ts'))
+const { parseSessionCommand, executeSessionCommand } = await import(join(LIB_DIR, 'commands.ts'))
+const { startScheduler } = await import(join(LIB_DIR, 'scheduler.ts'))
 
 const STATE_DIR = process.env.TELEGRAM_STATE_DIR ?? join(homedir(), '.claude', 'channels', 'telegram')
 const ACCESS_FILE = join(STATE_DIR, 'access.json')
@@ -57,6 +65,10 @@ if (!TOKEN) {
   process.exit(1)
 }
 const INBOX_DIR = join(STATE_DIR, 'inbox')
+
+// Session memory — load config and start background scheduler
+const sessionConfig = loadConfig(STATE_DIR)
+const stopScheduler = startScheduler(STATE_DIR, sessionConfig)
 
 // Last-resort safety net — without these the process dies silently on any
 // unhandled promise rejection. With them it logs and keeps serving tools.
@@ -586,6 +598,15 @@ mcp.setRequestHandler(CallToolRequestSchema, async req => {
           }
         }
 
+        // Session: log outbound assistant message to STM
+        // Derive userId from chat_id (in private chats, chat_id == user_id)
+        appendMessage(STATE_DIR, chat_id, {
+          ts: new Date().toISOString(),
+          role: 'assistant',
+          text,
+          channel: 'telegram',
+        })
+
         const result =
           sentIds.length === 1
             ? `sent (id: ${sentIds[0]})`
@@ -750,6 +771,18 @@ bot.on('callback_query:data', async ctx => {
       await ctx.editMessageText(`${msg.text}\n\n→ ${label}`).catch(() => {})
     }
 
+    // Session: log button press to STM
+    const btnTs = new Date().toISOString()
+    appendMessage(STATE_DIR, senderId, {
+      ts: btnTs,
+      role: 'user',
+      text: label,
+      channel: 'telegram',
+    })
+
+    // Build context for button callback
+    const btnContext = buildContextPrompt(STATE_DIR, senderId, sessionConfig)
+
     // Relay button label as a channel inbound message.
     void mcp.notification({
       method: 'notifications/claude/channel',
@@ -759,8 +792,9 @@ bot.on('callback_query:data', async ctx => {
           chat_id,
           user: from.username ?? senderId,
           user_id: senderId,
-          ts: new Date().toISOString(),
+          ts: btnTs,
           button: 'true',
+          ...(btnContext ? { session_context: btnContext } : {}),
         },
       },
     }).catch(err => {
@@ -981,6 +1015,14 @@ async function handleInbound(
     return
   }
 
+  // Session command intercept: handle /session locally without LLM
+  const sessionCmd = parseSessionCommand(text)
+  if (sessionCmd) {
+    const response = executeSessionCommand(STATE_DIR, String(from.id), sessionCmd)
+    await bot.api.sendMessage(chat_id, response).catch(() => {})
+    return
+  }
+
   // Typing indicator — signals "processing" until we reply (or ~5s elapses).
   void bot.api.sendChatAction(chat_id, 'typing').catch(() => {})
 
@@ -997,6 +1039,20 @@ async function handleInbound(
 
   const imagePath = downloadImage ? await downloadImage() : undefined
 
+  // Session: log inbound user message to STM
+  const userId = String(from.id)
+  const msgTs = new Date((ctx.message?.date ?? 0) * 1000).toISOString()
+  appendMessage(STATE_DIR, userId, {
+    ts: msgTs,
+    role: 'user',
+    text,
+    msgId: msgId != null ? String(msgId) : undefined,
+    channel: 'telegram',
+  })
+
+  // Session: build context from STM (summary + recent messages)
+  const context = buildContextPrompt(STATE_DIR, userId, sessionConfig)
+
   // image_path goes in meta only — an in-content "[image attached — read: PATH]"
   // annotation is forgeable by any allowlisted sender typing that string.
   mcp.notification({
@@ -1007,8 +1063,8 @@ async function handleInbound(
         chat_id,
         ...(msgId != null ? { message_id: String(msgId) } : {}),
         user: from.username ?? String(from.id),
-        user_id: String(from.id),
-        ts: new Date((ctx.message?.date ?? 0) * 1000).toISOString(),
+        user_id: userId,
+        ts: msgTs,
         ...(imagePath ? { image_path: imagePath } : {}),
         ...(attachment ? {
           attachment_kind: attachment.kind,
@@ -1017,6 +1073,7 @@ async function handleInbound(
           ...(attachment.mime ? { attachment_mime: attachment.mime } : {}),
           ...(attachment.name ? { attachment_name: attachment.name } : {}),
         } : {}),
+        ...(context ? { session_context: context } : {}),
       },
     },
   }).catch(err => {
