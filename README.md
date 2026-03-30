@@ -207,9 +207,9 @@ You: approve
 
 ### Telegram
 
-| Ask | Reply |
-|-----|-------|
-| <img src="docs/screenshots/telegram/ask.png" width="300" alt="Telegram Ask"> | <img src="docs/screenshots/telegram/reply.png" width="300" alt="Telegram Reply"> |
+| Ask | Reply | Inline Buttons |
+|-----|-------|----------------|
+| <img src="docs/screenshots/telegram/ask.png" width="300" alt="Telegram Ask"> | <img src="docs/screenshots/telegram/reply.png" width="300" alt="Telegram Reply"> | <img src="docs/screenshots/telegram/button.png" width="300" alt="Telegram Inline Buttons"> |
 
 ### Discord
 
