@@ -13,6 +13,10 @@
 # Playwright MCP screenshots
 .playwright-mcp/
 
+# Python
+__pycache__/
+*.pyc
+
 # Node / Bun
 node_modules/
 
@@ -25,4 +29,6 @@ node_modules/
 # Custom
 firebase-debug.log
 tmp/
+
+# Output (yt2pdf, digests, etc.)
 output/
