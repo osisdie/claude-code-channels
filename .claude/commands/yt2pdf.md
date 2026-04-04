@@ -74,6 +74,7 @@ Using the transcript, generate markdown summary file(s) in `output/youtube/YYYY-
 - Include 3-5 **tags**: lowercase English topic tags covering companies (e.g. nvidia, openai), technologies (e.g. inference, rag), categories (e.g. policy, research, product, open-source)
 
 **Timestamp links**: The transcript contains `[MM:SS]` markers. Convert them to YouTube timestamp links in the summary:
+
 - `[MM:SS]` → `[[MM:SS](https://youtube.com/watch?v=VIDEO_ID&t=TOTAL_SECONDS)]` where TOTAL_SECONDS = minutes × 60 + seconds
 - Place timestamps at natural topic boundaries — aim for 5-15 per summary, not every marker
 - If the transcript starts with `[NO_TIMESTAMPS]`, omit all timestamp links
@@ -117,6 +118,7 @@ Each metadata field MUST be on its own line. Use HTML `<br>` line breaks to ensu
 ```
 
 **Structure requirements:**
+
 - Generate a detailed, structured summary (**800-1200 words**)
 - Use `##` for the main "Summary" heading
 - Use `###` for each major topic/section, prefixed with a relevant emoji
@@ -128,6 +130,7 @@ Each metadata field MUST be on its own line. Use HTML `<br>` line breaks to ensu
 - Add a video link at the bottom
 
 **Content requirements:**
+
 - Cover ALL major topics discussed, not just the first few
 - Include specific examples, data points, and direct quotes when present
 - Preserve technical terms and proper nouns accurately
@@ -170,6 +173,7 @@ Each metadata field MUST be on its own line. Use HTML `<br>` line breaks to ensu
 ```
 
 **結構要求：**
+
 - 生成詳細的結構化摘要（**800-1200 字**）
 - 使用 `##` 作為「摘要」主標題
 - 使用 `###` 標示每個主要主題，前方加上相關 emoji
@@ -181,6 +185,7 @@ Each metadata field MUST be on its own line. Use HTML `<br>` line breaks to ensu
 - 底部加上影片連結
 
 **內容要求：**
+
 - 涵蓋影片中討論的**所有**主要主題，不只前幾個
 - 保留具體範例、數據與直接引述
 - 專有名詞保持原文（可加中文說明）
