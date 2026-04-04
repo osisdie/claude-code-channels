@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-04-04
+
+### Added
+
+- `/yt2pdf` command: YouTube URL → transcript → bilingual PDF summary → B2 download link
+  - Supports `--lang en` or `--lang zh-tw` for single-language output (default: both)
+  - Pipeline: `get_transcript.py` → Claude summarizes → `build_html.py` → `build_pdf.py` → `upload_b2.py`
+  - Orchestrator script (`yt2pdf.py`) chains HTML→PDF→B2 with JSON stdout
+  - Thumbnail embedded as base64 in PDF for self-contained output
+  - Metadata in PDF and reply: title, publisher, published date, tags
+  - Output stored in `output/youtube/{date}/{video_id}/` (gitignored)
+- Content filter and audit logging for Telegram and Discord channel plugins
+  - Blocks credential leaks (API keys, tokens, private keys) and jailbreak patterns
+  - Warn-level logging for system prompt probing and dangerous commands
+  - Audit trail in `STATE_DIR/audit/YYYY-MM-DD.jsonl`
+- Task planner agent (`.claude/agents/task-planner.md`) for persistent task management
+- Python dependencies (`scripts/yt/requirements.txt`)
+
+### Changed
+
+- `.env.example`: add B2 and HuggingFace credential placeholders
+- `.gitignore`: add `__pycache__/`, `*.pyc`, reorganize output section
+
 ## [1.0.0] - 2026-03-24
 
 ### Highlights
@@ -125,6 +148,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - Per-channel documentation structure (`docs/<channel>/`)
 - MIT license
 
+[1.1.0]: https://github.com/osisdie/claude-code-channels/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/osisdie/claude-code-channels/compare/v0.5.0...v1.0.0
 [0.5.0]: https://github.com/osisdie/claude-code-channels/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/osisdie/claude-code-channels/compare/v0.3.0...v0.4.0
