@@ -38,8 +38,11 @@ resolve_cache_base() {
   echo "$HOME/.claude/plugins/cache/$plugin_org/$plugin_name"
 }
 
-# Patch the .mcp.json in a plugin cache version dir so it runs our local
-# fork code with the project-local state dir.
+# Patch plugin cache: copy our fork's server.ts into the cache directory and
+# update .mcp.json with the project-local state dir env var.
+# Claude Code runs server.ts from cache regardless of --cwd, so we must
+# overwrite the file directly. The FORK_TAG constant in server.ts identifies
+# our fork in startup logs.
 # Args: $1=cache_version_dir  $2=local_abs_path  $3=channel_name
 patch_cache_mcp() {
   local ver_dir="$1" local_abs="$2" ch_name="$3"
@@ -47,12 +50,20 @@ patch_cache_mcp() {
   local state_dir="$PROJECT_DIR/.claude/channels/$ch_name"
   local env_key="${ch_name^^}_STATE_DIR"
 
+  # Copy fork server.ts into cache (Claude Code runs from cache, not --cwd)
+  cp "$local_abs/server.ts" "$ver_dir/server.ts"
+
+  # Fix import paths: our fork uses relative __dirname paths to lib/,
+  # but cache dir has a different parent. Replace with absolute paths.
+  sed -i "s|resolve(__dirname, '..', '..', 'lib', 'sessions')|'$PROJECT_DIR/lib/sessions'|" "$ver_dir/server.ts"
+  sed -i "s|resolve(__dirname, '..', '..', 'lib', 'safety')|'$PROJECT_DIR/lib/safety'|" "$ver_dir/server.ts"
+
   cat > "$mcp_file" <<MCPEOF
 {
   "mcpServers": {
     "$ch_name": {
       "command": "bun",
-      "args": ["run", "--cwd", "$local_abs", "--shell=bun", "--silent", "start"],
+      "args": ["run", "--cwd", "${ver_dir}", "--shell=bun", "--silent", "start"],
       "env": {
         "$env_key": "$state_dir"
       }
@@ -149,7 +160,7 @@ for ch in "${CHANNELS[@]}"; do
           [[ -d "${ver_dir}.official" ]] && mv "${ver_dir}.official" "$ver_dir"
         fi
         patch_cache_mcp "$ver_dir" "$local_abs" "$ch"
-        echo "Patched $(basename "$ver_dir")/.mcp.json → $local_abs"
+        echo "Patched $(basename "$ver_dir")/server.ts + .mcp.json ← $local_abs"
       done
     else
       echo "WARNING: plugin cache not found for $ch"

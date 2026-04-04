@@ -39,21 +39,25 @@ If `hqdefault.jpg` fails, try `mqdefault.jpg`. If both fail, continue without th
 
 ## Step 3: Fetch Metadata & Extract Transcript
 
-First, fetch video metadata (title, publish date, channel name) via yt-dlp:
+First, fetch video metadata (title, publish date, channel name, language) via yt-dlp:
 
 ```bash
 yt-dlp --dump-json --skip-download "https://youtube.com/watch?v=VIDEO_ID" 2>/dev/null | python3 -c "
 import json,sys; d=json.load(sys.stdin)
-print(json.dumps({'title':d.get('title',''),'uploader':d.get('uploader',''),'upload_date':d.get('upload_date',''),'duration':d.get('duration',0)}))"
+print(json.dumps({'title':d.get('title',''),'uploader':d.get('uploader',''),'upload_date':d.get('upload_date',''),'duration':d.get('duration',0),'language':d.get('language','en')}))"
 ```
 
-Parse the JSON to get: title, uploader, upload_date (YYYYMMDD → YYYY-MM-DD).
+Parse the JSON to get: title, uploader, upload_date (YYYYMMDD → YYYY-MM-DD), language.
 
-Then extract transcript:
+Then extract transcript with timestamps and the video's original language:
 
 ```bash
-python3 scripts/yt/get_transcript.py VIDEO_ID
+python3 scripts/yt/get_transcript.py VIDEO_ID --lang LANGUAGE --timestamps
 ```
+
+- Use the `language` field from metadata (e.g. `zh-tw`, `en`, `ja`). If missing, default to `en`.
+- The `--timestamps` flag preserves `[MM:SS]` markers every ~30 seconds for timestamp links in the summary.
+- If the transcript starts with `[NO_TIMESTAMPS]`, timestamps are unavailable (Whisper fallback) — skip timestamp links in Step 4.
 
 Capture the stdout output as the transcript text. If it fails, reply with the error and stop.
 
@@ -66,8 +70,14 @@ Using the transcript, generate markdown summary file(s) in `output/youtube/YYYY-
 **Important**:
 
 - Each summary MUST include the thumbnail image reference (`thumb.jpg` — embedded as base64 in PDF automatically)
-- Include metadata: title, YouTube link, published date, uploader/publisher
+- ALL metadata fields are **required**: title, YouTube link, published date, uploader/publisher, tags
 - Include 3-5 **tags**: lowercase English topic tags covering companies (e.g. nvidia, openai), technologies (e.g. inference, rag), categories (e.g. policy, research, product, open-source)
+
+**Timestamp links**: The transcript contains `[MM:SS]` markers. Convert them to YouTube timestamp links in the summary:
+
+- `[MM:SS]` → `[[MM:SS](https://youtube.com/watch?v=VIDEO_ID&t=TOTAL_SECONDS)]` where TOTAL_SECONDS = minutes × 60 + seconds
+- Place timestamps at natural topic boundaries — aim for 5-15 per summary, not every marker
+- If the transcript starts with `[NO_TIMESTAMPS]`, omit all timestamp links
 
 ### If lang includes `en` → write `output/youtube/YYYY-MM-DD/VIDEO_ID/summary_en.md`
 
@@ -80,16 +90,51 @@ Each metadata field MUST be on its own line. Use HTML `<br>` line breaks to ensu
 
 **Publisher**: Uploader Name<br>
 **Source**: [Watch on YouTube](https://youtube.com/watch?v=VIDEO_ID)<br>
-**Published**: 2026-04-04<br>
+**Published**: YYYY-MM-DD<br>
 **Tags**: tag1, tag2, tag3, tag4, tag5
 
 ## Summary
 
-3-5 paragraph English summary covering:
-- Key points and main arguments
-- Notable quotes or data points
-- Conclusions and takeaways
+### 🔍 Section Title [[MM:SS](url&t=N)]
+
+- Key concept or argument
+- Supporting detail, quote, or data point
+
+### 📌 Another Section [[MM:SS](url&t=N)]
+
+#### Sub-topic (when section has multiple distinct points)
+
+1. Enumerated item one
+2. Enumerated item two
+
+- Practical takeaway or example
+
+### 💡 Conclusion / Key Takeaways
+
+- Takeaway 1
+- Takeaway 2
+
+🔗 [Watch the full video](https://youtube.com/watch?v=VIDEO_ID)
 ```
+
+**Structure requirements:**
+
+- Generate a detailed, structured summary (**800-1200 words**)
+- Use `##` for the main "Summary" heading
+- Use `###` for each major topic/section, prefixed with a relevant emoji
+- Use `####` for sub-topics when a section has multiple distinct points
+- Use bullet points (`-`) for key concepts, practical takeaways, notable quotes
+- Use numbered lists (`1.`) for sequential or enumerated content (e.g. "3 steps", "4 failure modes")
+- Include YouTube timestamp links at key section headings and significant points
+- End with a `### 💡 Conclusion` or `### 💡 Key Takeaways` section
+- Add a video link at the bottom
+
+**Content requirements:**
+
+- Cover ALL major topics discussed, not just the first few
+- Include specific examples, data points, and direct quotes when present
+- Preserve technical terms and proper nouns accurately
+- Each `###` section should have 2-4 bullet points minimum
 
 ### If lang includes `zh-tw` → write `output/youtube/YYYY-MM-DD/VIDEO_ID/summary_zh-tw.md`
 
@@ -100,18 +145,53 @@ Each metadata field MUST be on its own line. Use HTML `<br>` line breaks to ensu
 
 **頻道**: Uploader Name<br>
 **來源**: [在 YouTube 上觀看](https://youtube.com/watch?v=VIDEO_ID)<br>
-**發布日期**: 2026-04-04<br>
+**發布日期**: YYYY-MM-DD<br>
 **標籤**: tag1, tag2, tag3, tag4, tag5
 
 ## 摘要
 
-3-5 段繁體中文摘要，涵蓋：
-- 重點與主要論點
-- 值得注意的引用或數據
-- 結論與要點
+### 🔍 段落標題 [[MM:SS](url&t=N)]
+
+- 核心概念或論點
+- 具體範例、數據或引述
+
+### 📌 另一段落 [[MM:SS](url&t=N)]
+
+#### 子主題（當段落有多個重點時）
+
+1. 列舉項目一
+2. 列舉項目二
+
+- 實踐方式或關鍵心得
+
+### 💡 總結 / 重點整理
+
+- 要點一
+- 要點二
+
+🔗 [觀看完整影片](https://youtube.com/watch?v=VIDEO_ID)
 ```
 
-**Important**: Use Traditional Chinese (繁體中文) only. Never use Simplified Chinese.
+**結構要求：**
+
+- 生成詳細的結構化摘要（**800-1200 字**）
+- 使用 `##` 作為「摘要」主標題
+- 使用 `###` 標示每個主要主題，前方加上相關 emoji
+- 使用 `####` 標示子主題（當一個段落有多個重點時）
+- 使用項目符號（`-`）列出核心概念、實踐方式、關鍵引述
+- 使用編號列表（`1.`）呈現有先後順序或列舉性質的內容
+- 在關鍵段落標題與重要論點旁加入 YouTube 時間戳連結
+- 以 `### 💡 總結` 或 `### 💡 重點整理` 作為結尾段落
+- 底部加上影片連結
+
+**內容要求：**
+
+- 涵蓋影片中討論的**所有**主要主題，不只前幾個
+- 保留具體範例、數據與直接引述
+- 專有名詞保持原文（可加中文說明）
+- 每個 `###` 段落至少包含 2-4 個項目符號
+
+**務必使用繁體中文，嚴禁簡體中文。所有元資料欄位皆為必填。**
 
 Write file(s) using the Write tool.
 
