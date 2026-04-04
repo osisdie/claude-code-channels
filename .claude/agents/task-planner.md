@@ -31,7 +31,8 @@ Execute the operation specified in the prompt. Always use UTC+8 timestamps.
 8. If 3+ tasks are pending or any task is stale, append: "⚠ Recommend running a task review."
 
 Output format:
-```
+
+```text
 | ID  | Title                   | Status      | Priority | Updated      |
 |-----|-------------------------|-------------|----------|--------------|
 | 001 | Fix SVG font fallback   | in_progress | high     | 2h ago       |
@@ -63,7 +64,7 @@ updated_at: "{ISO 8601 timestamp}"
 {criteria as checkbox list, or "TBD" if not specified}
 ```
 
-6. Return: "Created task {NNN}: {title}"
+1. Return: "Created task {NNN}: {title}"
 
 ### update {ID}
 

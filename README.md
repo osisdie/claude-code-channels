@@ -189,7 +189,13 @@ You: approve
 │   └── safety/               # Content filter, quota, audit logging
 ├── scripts/
 │   ├── verify_slack.sh       # Slack token verification & smoke test
-│   └── verify_whatsapp.sh    # WhatsApp relay verification & smoke test
+│   ├── verify_whatsapp.sh    # WhatsApp relay verification & smoke test
+│   └── yt/                   # YouTube-to-PDF pipeline (/yt2pdf)
+│       ├── get_transcript.py # Extract transcript (subtitles → Whisper)
+│       ├── build_html.py     # Markdown → styled HTML (base64 images)
+│       ├── build_pdf.py      # HTML → PDF via headless Chrome
+│       ├── upload_b2.py      # Upload to B2 + presigned URL
+│       └── yt2pdf.py         # Orchestrator (HTML→PDF→B2)
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
 │   │   ├── bug_report.md
@@ -210,6 +216,22 @@ You: approve
 | Ask | Reply | Inline Buttons |
 |-----|-------|----------------|
 | <img src="docs/screenshots/telegram/ask.png" width="300" alt="Telegram Ask"> | <img src="docs/screenshots/telegram/reply.png" width="300" alt="Telegram Reply"> | <img src="docs/screenshots/telegram/button.png" width="300" alt="Telegram Inline Buttons"> |
+
+
+### YouTube to PDF (`/yt2pdf`)
+
+| Command | Result | PDF Output |
+|---------|--------|------------|
+| <img src="docs/screenshots/telegram/yt2pdf_ask.png" width="300" alt="yt2pdf Command"> | <img src="docs/screenshots/telegram/yt2pdf_reply.png" width="300" alt="yt2pdf Reply"> | [summary_en.pdf](tests/youtube/summary_en.pdf) |
+
+> Send `/yt2pdf <YouTube URL>` from Telegram or Discord. Claude extracts the transcript, generates a bilingual summary (EN + zh-TW), builds a styled PDF with thumbnail, and uploads to B2 Cloud Storage with a presigned download link.
+### YouTube to PDF (`/yt2pdf`)
+
+| Command | Result | PDF Output |
+|---------|--------|------------|
+| <img src="docs/screenshots/telegram/yt2pdf_ask.png" width="300" alt="yt2pdf Command"> | <img src="docs/screenshots/telegram/yt2pdf_reply.png" width="300" alt="yt2pdf Reply"> | [summary_en.pdf](tests/youtube/summary_en.pdf) |
+
+> Send `/yt2pdf <YouTube URL>` from Telegram or Discord. Claude extracts the transcript, generates a bilingual summary (EN + zh-TW), builds a styled PDF with thumbnail, and uploads to B2 Cloud Storage with a presigned download link.
 
 ### Discord
 
