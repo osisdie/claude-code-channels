@@ -52,6 +52,10 @@ def download_subtitles(video_url: str, out_dir: Path, lang: str = "en") -> Path 
     )
     if srt_path.exists() and srt_path.stat().st_size > 0:
         return srt_path
+    # Glob fallback — yt-dlp may normalize lang codes differently
+    for candidate in out_dir.glob("video.*.srt"):
+        if candidate.stat().st_size > 0:
+            return candidate
 
     # Try auto-generated subs
     subprocess.run(
@@ -73,6 +77,9 @@ def download_subtitles(video_url: str, out_dir: Path, lang: str = "en") -> Path 
     )
     if srt_path.exists() and srt_path.stat().st_size > 0:
         return srt_path
+    for candidate in out_dir.glob("video.*.srt"):
+        if candidate.stat().st_size > 0:
+            return candidate
 
     return None
 
@@ -91,6 +98,34 @@ def srt_to_text(srt_path: Path) -> str:
             continue
         lines.append(line)
     return "\n".join(lines)
+
+
+def srt_to_timestamped_text(srt_path: Path, interval: int = 30) -> str:
+    """Convert SRT to text with [MM:SS] markers every ~interval seconds."""
+    content = srt_path.read_text(encoding="utf-8")
+    result = []
+    last_emitted = -interval  # emit on first entry
+    current_ts_seconds = 0
+
+    for line in content.splitlines():
+        line = line.strip()
+        if not line or re.match(r"^\d+$", line):
+            continue
+        ts_match = re.match(r"(\d{2}):(\d{2}):(\d{2}),\d{3}\s*-->", line)
+        if ts_match:
+            h, m, s = int(ts_match.group(1)), int(ts_match.group(2)), int(ts_match.group(3))
+            current_ts_seconds = h * 3600 + m * 60 + s
+            continue
+        # Text line — prepend timestamp marker if interval elapsed
+        if current_ts_seconds - last_emitted >= interval:
+            mm = current_ts_seconds // 60
+            ss = current_ts_seconds % 60
+            result.append(f"[{mm:02d}:{ss:02d}] {line}")
+            last_emitted = current_ts_seconds
+        else:
+            result.append(line)
+
+    return "\n".join(result)
 
 
 def whisper_transcribe_hf(video_url: str, out_dir: Path) -> str | None:
@@ -163,28 +198,43 @@ def whisper_transcribe_hf(video_url: str, out_dir: Path) -> str | None:
         return None
 
 
-def get_transcript(video_id: str) -> str | None:
+LANG_FALLBACKS = {
+    "zh-tw": ["zh-Hant", "zh-TW", "zh", "en"],
+    "zh": ["zh-Hans", "zh-CN", "zh", "en"],
+    "ja": ["ja", "en"],
+    "ko": ["ko", "en"],
+}
+
+
+def get_transcript(
+    video_id: str, lang: str = "en", timestamps: bool = False
+) -> str | None:
     """Get transcript for a video using subtitle download with Whisper fallback."""
     video_url = f"https://www.youtube.com/watch?v={video_id}"
+    convert = srt_to_timestamped_text if timestamps else srt_to_text
+    langs_to_try = LANG_FALLBACKS.get(lang, [lang, "en"]) if lang != "en" else ["en"]
 
     with tempfile.TemporaryDirectory(prefix="yt_transcript_") as tmpdir:
         tmp = Path(tmpdir)
 
-        # Try subtitles first (English)
-        print(f"Trying EN subtitles for {video_id}...", file=sys.stderr)
-        srt = download_subtitles(video_url, tmp, lang="en")
-        if srt:
-            text = srt_to_text(srt)
-            if len(text) > 100:
-                print(f"Got subtitle transcript ({len(text)} chars)", file=sys.stderr)
-                return text
+        for try_lang in langs_to_try:
+            print(f"Trying {try_lang} subtitles for {video_id}...", file=sys.stderr)
+            srt = download_subtitles(video_url, tmp, lang=try_lang)
+            if srt:
+                text = convert(srt)
+                if len(text) > 100:
+                    print(
+                        f"Got subtitle transcript in {try_lang} ({len(text)} chars)",
+                        file=sys.stderr,
+                    )
+                    return text
 
-        # Whisper fallback
+        # Whisper fallback (no timestamps available)
         print(f"Falling back to Whisper for {video_id}...", file=sys.stderr)
         text = whisper_transcribe_hf(video_url, tmp)
         if text and len(text) > 100:
             print(f"Got Whisper transcript ({len(text)} chars)", file=sys.stderr)
-            return text
+            return "[NO_TIMESTAMPS]\n" + text if timestamps else text
 
     print(f"No transcript available for {video_id}", file=sys.stderr)
     return None
@@ -193,9 +243,17 @@ def get_transcript(video_id: str) -> str | None:
 def main():
     parser = argparse.ArgumentParser(description="Extract YouTube video transcript")
     parser.add_argument("video_id", help="YouTube video ID")
+    parser.add_argument(
+        "--lang", default="en", help="Subtitle language (default: en)"
+    )
+    parser.add_argument(
+        "--timestamps",
+        action="store_true",
+        help="Preserve [MM:SS] timestamp markers (~30s intervals)",
+    )
     args = parser.parse_args()
 
-    transcript = get_transcript(args.video_id)
+    transcript = get_transcript(args.video_id, lang=args.lang, timestamps=args.timestamps)
     if transcript:
         print(transcript)
     else:

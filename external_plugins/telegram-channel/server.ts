@@ -15,6 +15,9 @@
  * Telegram's Bot API has no history or search. Reply-only tools.
  */
 
+// Fork identifier — shown in startup log to distinguish from official plugin.
+const FORK_TAG = 'claude-code-channels'
+
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
@@ -625,6 +628,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async req => {
           sentIds.length === 1
             ? `sent (id: ${sentIds[0]})`
             : `sent ${sentIds.length} parts (ids: ${sentIds.join(', ')})`
+
         return { content: [{ type: 'text', text: result }] }
       }
       case 'react': {
@@ -740,7 +744,7 @@ bot.command('status', async ctx => {
 
   if (access.allowFrom.includes(senderId)) {
     const name = from.username ? `@${from.username}` : senderId
-    await ctx.reply(`Paired as ${name}.`)
+    await ctx.reply(`Paired as ${name}.\nFork: ${FORK_TAG}`)
     return
   }
 
@@ -1121,7 +1125,7 @@ void (async () => {
       await bot.start({
         onStart: info => {
           botUsername = info.username
-          process.stderr.write(`telegram channel: polling as @${info.username}\n`)
+          process.stderr.write(`telegram channel: polling as @${info.username} [${FORK_TAG}]\n`)
           void bot.api.setMyCommands(
             [
               { command: 'start', description: 'Welcome and setup guide' },

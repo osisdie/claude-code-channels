@@ -1,7 +1,7 @@
 /**
  * Session bot commands — parsed and executed at the broker layer.
  *
- * Commands are prefixed with `/session` and handled without LLM invocation.
+ * Commands are prefixed with `/memory` (legacy `/session` also accepted) and handled without LLM invocation.
  */
 
 import { existsSync } from 'fs'
@@ -19,12 +19,15 @@ export interface SessionCommand {
   args: string[]
 }
 
-/** Parse a /session command from message text. Returns null if not a session command. */
+/** Parse a /memory (or legacy /session) command from message text. Returns null if not a match. */
 export function parseSessionCommand(text: string): SessionCommand | null {
   const trimmed = text.trim()
-  if (!trimmed.startsWith('/session')) return null
+  let prefix: string
+  if (trimmed.startsWith('/memory')) prefix = '/memory'
+  else if (trimmed.startsWith('/session')) prefix = '/session'
+  else return null
 
-  const parts = trimmed.slice('/session'.length).trim().split(/\s+/)
+  const parts = trimmed.slice(prefix.length).trim().split(/\s+/)
   const action = parts[0] ?? 'help'
   const args = parts.slice(1)
 
@@ -97,7 +100,7 @@ function handleProfile(stateDir: string, userId: string): string {
 
 function handleForget(stateDir: string, args: string[]): string {
   const slug = args[0]
-  if (!slug) return 'Usage: /session forget <topic-slug>'
+  if (!slug) return 'Usage: /memory forget <topic-slug>'
   deleteTopic(stateDir, slug)
   return `Topic "${slug}" has been deleted.`
 }
@@ -116,12 +119,12 @@ function handleHelp(): string {
   return [
     'Session Commands',
     '────────────────',
-    '/session status  — Show session stats',
-    '/session clear   — Clear your short-term memory',
-    '/session clear all — Clear all your data (STM + LTM)',
-    '/session profile — Show your stored profile',
-    '/session forget <topic> — Delete a topic note',
-    '/session export  — Export your data',
-    '/session help    — Show this help',
+    '/memory status  — Show session stats',
+    '/memory clear   — Clear your short-term memory',
+    '/memory clear all — Clear all your data (STM + LTM)',
+    '/memory profile — Show your stored profile',
+    '/memory forget <topic> — Delete a topic note',
+    '/memory export  — Export your data',
+    '/memory help    — Show this help',
   ].join('\n')
 }
