@@ -224,14 +224,7 @@ You: approve
 |---------|--------|------------|
 | <img src="docs/screenshots/telegram/yt2pdf_ask.png" width="300" alt="yt2pdf Command"> | <img src="docs/screenshots/telegram/yt2pdf_reply.png" width="300" alt="yt2pdf Reply"> | [summary_en.pdf](tests/youtube/summary_en.pdf) |
 
-> Send `/yt2pdf <YouTube URL>` from Telegram or Discord. Claude extracts the transcript, generates a bilingual summary (EN + zh-TW), builds a styled PDF with thumbnail, and uploads to B2 Cloud Storage with a presigned download link.
-### YouTube to PDF (`/yt2pdf`)
-
-| Command | Result | PDF Output |
-|---------|--------|------------|
-| <img src="docs/screenshots/telegram/yt2pdf_ask.png" width="300" alt="yt2pdf Command"> | <img src="docs/screenshots/telegram/yt2pdf_reply.png" width="300" alt="yt2pdf Reply"> | [summary_en.pdf](tests/youtube/summary_en.pdf) |
-
-> Send `/yt2pdf <YouTube URL>` from Telegram or Discord. Claude extracts the transcript, generates a bilingual summary (EN + zh-TW), builds a styled PDF with thumbnail, and uploads to B2 Cloud Storage with a presigned download link.
+Send `/yt2pdf <YouTube URL>` from Telegram or Discord. Claude extracts the transcript, generates a bilingual summary (EN + zh-TW), builds a styled PDF with thumbnail, and uploads to B2 Cloud Storage with a presigned download link.
 
 ### Discord
 
