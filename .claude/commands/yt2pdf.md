@@ -3,6 +3,7 @@ Convert a YouTube video into a downloadable PDF summary and upload to B2 Cloud S
 Input: $ARGUMENTS — A YouTube URL, optionally followed by `--lang en` or `--lang zh-tw` (default: both)
 
 Examples:
+
 - `/yt2pdf https://youtube.com/watch?v=xxx` → generates EN + zh-TW PDFs
 - `/yt2pdf https://youtube.com/watch?v=xxx --lang en` → English PDF only
 - `/yt2pdf https://youtube.com/watch?v=xxx --lang zh-tw` → Traditional Chinese PDF only
@@ -10,6 +11,7 @@ Examples:
 ## Step 1: Parse & Acknowledge
 
 Extract the video ID and optional `--lang` flag from input. Supported URL formats:
+
 - `https://www.youtube.com/watch?v=VIDEO_ID`
 - `https://youtu.be/VIDEO_ID`
 - `https://youtube.com/shorts/VIDEO_ID`
@@ -62,6 +64,7 @@ Update progress: "Transcript extracted (N chars). Generating summary..."
 Using the transcript, generate markdown summary file(s) in `output/youtube/YYYY-MM-DD/VIDEO_ID/`.
 
 **Important**:
+
 - Each summary MUST include the thumbnail image reference (`thumb.jpg` — embedded as base64 in PDF automatically)
 - Include metadata: title, YouTube link, published date, uploader/publisher
 - Include 3-5 **tags**: lowercase English topic tags covering companies (e.g. nvidia, openai), technologies (e.g. inference, rag), categories (e.g. policy, research, product, open-source)
@@ -130,6 +133,7 @@ python3 scripts/yt/yt2pdf.py output/youtube/YYYY-MM-DD/VIDEO_ID/summary_zh-tw.md
 ```
 
 Parse the JSON output from stdout. It returns an array like:
+
 ```json
 [
   {"lang": "en",    "pdf": "output/youtube/.../summary_en.pdf",    "url": "https://..."},
@@ -140,6 +144,7 @@ Parse the JSON output from stdout. It returns an array like:
 ## Step 6: Reply with Results
 
 Send a final reply (new message, not edit) that includes:
+
 1. **Video title** + YouTube link
 2. **Published date** + **Publisher/Channel**
 3. **Tags** (3-5 topic tags)
@@ -147,7 +152,8 @@ Send a final reply (new message, not edit) that includes:
 5. **Download links** — B2 presigned URLs
 
 **For Telegram** (using reply tool):
-```
+
+```text
 📺 Video Title
 🔗 https://youtube.com/watch?v=VIDEO_ID
 📅 2026-04-04 · Uploader Name
@@ -161,10 +167,12 @@ EN: 2-3 sentence summary of the video's key points...
 EN: <presigned_url_en>
 繁中: <presigned_url_zh-tw>
 ```
+
 Do NOT include `files` parameter for Telegram — B2 URLs are sufficient. Telegram sends files as separate messages which looks redundant. Only attach files as fallback when B2 upload fails.
 
 **For Slack** (using slack_send or direct reply):
-```
+
+```text
 :tv: *Video Title*
 :link: <https://youtube.com/watch?v=VIDEO_ID|Watch on YouTube>
 :calendar: 2026-04-04 · Uploader Name
@@ -186,4 +194,4 @@ If B2 upload failed, attach the PDFs directly and note that download links are u
 - **No transcript available**: Reply "Could not extract transcript for this video. It may not have subtitles or audio."
 - **PDF generation fails**: Reply with the markdown summary text directly as a fallback.
 - **B2 upload fails**: Attach PDFs directly in the reply without download links.
-- **Invalid URL**: Reply "Please provide a valid YouTube URL. Example: /yt2pdf https://youtube.com/watch?v=VIDEO_ID"
+- **Invalid URL**: Reply "Please provide a valid YouTube URL. Example: `/yt2pdf https://youtube.com/watch?v=VIDEO_ID`"
