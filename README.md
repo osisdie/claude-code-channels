@@ -217,7 +217,6 @@ You: approve
 |-----|-------|----------------|
 | <img src="docs/screenshots/telegram/ask.png" width="300" alt="Telegram Ask"> | <img src="docs/screenshots/telegram/reply.png" width="300" alt="Telegram Reply"> | <img src="docs/screenshots/telegram/button.png" width="300" alt="Telegram Inline Buttons"> |
 
-
 ### YouTube to PDF (`/yt2pdf`)
 
 | Command | Result | PDF Output |
